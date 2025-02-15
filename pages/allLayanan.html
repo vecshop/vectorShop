@@ -1,0 +1,412 @@
+.html
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Services - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+      .navbar {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-box {
+        position: relative;
+        width: 100%;
+      }
+
+      .search-box input {
+        padding-right: 30px;
+        border-radius: 20px;
+      }
+
+      .search-box .bi-search {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+      }
+
+      .filters-scroll {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 1rem;
+        background: white;
+        border-bottom: 1px solid #eee;
+      }
+
+      .filter-chip {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin-right: 0.5rem;
+        border-radius: 20px;
+        background: #f5f5f5;
+        color: #666;
+        text-decoration: none;
+      }
+
+      .filter-chip.active {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .sort-section {
+        padding: 1rem;
+        background: white;
+        border-bottom: 1px solid #eee;
+      }
+
+      .service-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .service-card:hover {
+        transform: translateY(-2px);
+      }
+
+      .service-image {
+        position: relative;
+        padding-top: 56.25%;
+        background: #eee;
+      }
+
+      .service-image i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        color: var(--primary-color);
+      }
+
+      .service-level {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .level-basic {
+        background: #4caf50;
+        color: white;
+      }
+
+      .level-middle {
+        background: #2196f3;
+        color: white;
+      }
+
+      .level-premium {
+        background: #ffc107;
+        color: black;
+      }
+
+      .service-details {
+        padding: 1rem;
+      }
+
+      .service-title {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .service-rating {
+        color: #ffc107;
+        font-size: 0.9rem;
+      }
+
+      .service-price {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar fixed-top">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <a
+            href="#"
+            class="text-dark"
+            onclick="window.history.back(); return false;"
+          >
+            <i class="bi bi-arrow-left fs-5"></i>
+          </a>
+          <div class="search-box flex-grow-1">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search services..."
+              id="searchInput"
+            />
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-top: 56px">
+      <!-- Filters -->
+      <div class="filters-scroll">
+        <a href="#" class="filter-chip active" data-filter="all">All</a>
+        <a href="#" class="filter-chip" data-filter="basic">Basic</a>
+        <a href="#" class="filter-chip" data-filter="middle">Middle</a>
+        <a href="#" class="filter-chip" data-filter="premium">Premium</a>
+      </div>
+
+      <!-- Sort -->
+      <div class="sort-section">
+        <div class="dropdown">
+          <button
+            class="btn btn-outline-secondary dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown"
+          >
+            <i class="bi bi-sort-down"></i> Sort by
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="#" data-sort="newest">Newest</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" data-sort="rating"
+                >Best Rating</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" data-sort="price-low"
+                >Price: Low to High</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" data-sort="price-high"
+                >Price: High to Low</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Services Grid -->
+      <div class="container py-3">
+        <div class="row g-3" id="servicesGrid">
+          <!-- Services will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { getServices, searchServices } from "../assets/js/supabase.js";
+
+      let services = []; // Keep global variable
+      let currentFilter = "all";
+      let currentSort = "newest";
+
+      async function loadServices(query = "") {
+        try {
+          // Directly assign to global services variable
+          if (query) {
+            services = await searchServices(query);
+          } else {
+            services = await getServices();
+          }
+
+          if (services.length === 0) {
+            const grid = document.getElementById("servicesGrid");
+            grid.innerHTML = `
+        <div class="col-12 text-center p-4">
+          <p class="text-muted">No services found matching "${query}"</p>
+        </div>
+      `;
+            return;
+          }
+
+          renderServices(); // Call renderServices with updated services array
+        } catch (error) {
+          console.error("Error loading services:", error);
+        }
+      }
+
+      function renderServices() {
+        const grid = document.getElementById("servicesGrid");
+        let filteredServices = [...services]; // Create copy of services array
+
+        if (currentFilter !== "all") {
+          filteredServices = filteredServices.filter(
+            (service) => service.level === currentFilter
+          );
+        }
+
+        // Apply sort
+        switch (currentSort) {
+          case "rating":
+            filteredServices.sort((a, b) => b.rating - a.rating);
+            break;
+          case "price-low":
+            filteredServices.sort((a, b) => a.price - b.price);
+            break;
+          case "price-high":
+            filteredServices.sort((a, b) => b.price - a.price);
+            break;
+          case "newest":
+          default:
+            filteredServices.sort(
+              (a, b) => new Date(b.created_at) - new Date(a.created_at)
+            );
+        }
+
+        if (filteredServices.length === 0) {
+          grid.innerHTML = `
+      <div class="col-12 text-center p-4">
+        <p class="text-muted">No services found for selected filter</p>
+      </div>
+    `;
+          return;
+        }
+
+        grid.innerHTML = filteredServices
+          .map(
+            (service) => `
+        <div class="col-6">
+          <a href="detailLayanan.html?id=${service.id}" class="service-card">
+            <div class="service-image" role="button">
+              <i class="bi ${service.icon || "bi-gear"}"></i>
+              ${
+                service.level
+                  ? `
+                <span class="service-level level-${service.level}">
+                  ${
+                    service.level.charAt(0).toUpperCase() +
+                    service.level.slice(1)
+                  }
+                </span>
+              `
+                  : ""
+              }
+            </div>
+            <div class="service-details" role="button">
+              <h2 class="service-title">${
+                service.name || "Unnamed Service"
+              }</h2>
+              <div class="service-price">
+                ${formatPriceRange(service)}
+              </div>
+              <div class="service-rating">
+                <i class="bi bi-star-fill"></i>
+                ${service.rating || "0.0"}
+              </div>
+            </div>
+          </a>
+        </div>
+      `
+          )
+          .join("");
+      }
+
+      function formatPriceRange(service) {
+        const basic_price = parseInt(service.basic_price) || 0;
+        const middle_price = parseInt(service.middle_price) || 0;
+        const premium_price = parseInt(service.premium_price) || 0;
+
+        // Get all non-zero prices
+        const validPrices = [basic_price, middle_price, premium_price].filter(
+          (price) => price > 0
+        );
+
+        if (validPrices.length === 0) {
+          return "Price not set";
+        }
+
+        const minPrice = Math.min(...validPrices);
+        const maxPrice = Math.max(...validPrices);
+
+        if (minPrice === maxPrice) {
+          return `Rp ${minPrice.toLocaleString()}`;
+        }
+
+        return `Rp ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`;
+      }
+
+      // Event Listeners
+      document.querySelectorAll(".filter-chip").forEach((chip) => {
+        chip.addEventListener("click", (e) => {
+          e.preventDefault();
+          document
+            .querySelectorAll(".filter-chip")
+            .forEach((c) => c.classList.remove("active"));
+          chip.classList.add("active");
+          currentFilter = chip.dataset.filter;
+          renderServices();
+        });
+      });
+
+      document.querySelectorAll(".dropdown-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.preventDefault();
+          currentSort = item.dataset.sort;
+          renderServices();
+        });
+      });
+
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase();
+        loadServices(query);
+      });
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.querySelector(".search-box input");
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get("q");
+
+        if (searchQuery) {
+          searchInput.value = searchQuery;
+          loadServices(searchQuery);
+        } else {
+          loadServices();
+        }
+
+        searchInput.addEventListener("click", (e) => {
+          e.preventDefault();
+          const currentQuery = e.target.value;
+          window.location.href = `searchPage.html${
+            currentQuery ? `?q=${encodeURIComponent(currentQuery)}` : ""
+          }`;
+        });
+      });
+    </script>
+  </body>
+</html>

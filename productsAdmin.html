@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products Management - Admin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      .product-image-preview {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .variant-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container py-4">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Products Management</h4>
+        <button
+          class="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#productModal"
+        >
+          <i class="bi bi-plus-lg"></i> Add Product
+        </button>
+      </div>
+
+      <!-- Search and Filter -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <input
+            type="text"
+            class="form-control"
+            id="searchProduct"
+            placeholder="Search products..."
+          />
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="filterStatus">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <!-- Products will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Add New Product</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="productForm">
+              <input type="hidden" name="id" id="productId" />
+
+              <!-- Basic Info -->
+              <div class="row mb-3">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label class="form-label">Product Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="name"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea
+                      class="form-control"
+                      name="description"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Product Image URL</label>
+                  <div class="d-flex flex-column align-items-center">
+                    <img
+                      id="imagePreview"
+                      src="https://via.placeholder.com/150x150"
+                      class="img-fluid rounded mb-2"
+                    />
+                    <input
+                      type="url"
+                      class="form-control"
+                      name="image_url"
+                      placeholder="Enter image URL"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price and Stock -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Base Price</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    name="price"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Coin Plus</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    name="coin_plus"
+                    value="0"
+                  />
+                </div>
+              </div>
+
+              <!-- Variants -->
+              <div class="mb-3">
+                <div
+                  class="d-flex justify-content-between align-items-center mb-2"
+                >
+                  <label class="form-label mb-0">Product Variants</label>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    id="addVariantBtn"
+                  >
+                    <i class="bi bi-plus"></i> Add Variant
+                  </button>
+                </div>
+                <div id="variantsContainer">
+                  <!-- Variants will be added here -->
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="is_active"
+                    checked
+                  />
+                  <label class="form-check-label">Active Status</label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                Save Product
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" style="display: none">
+      <div class="spinner-border text-primary"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { supabase } from "./assets/js/supabase.js";
+
+      let currentProducts = [];
+      const productModal = new bootstrap.Modal(
+        document.getElementById("productModal")
+      );
+      const loadingOverlay = document.querySelector(".loading-overlay");
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProducts();
+        initializeEventListeners();
+      });
+
+      // Event Listeners
+      function initializeEventListeners() {
+        // Product form submission
+        document
+          .getElementById("productForm")
+          .addEventListener("submit", handleProductSubmit);
+
+        // Add variant button
+        document
+          .getElementById("addVariantBtn")
+          .addEventListener("click", addVariantField);
+
+        // Search input
+        document
+          .getElementById("searchProduct")
+          .addEventListener("input", debounce(handleSearch, 300));
+
+        // Status filter
+        document
+          .getElementById("filterStatus")
+          .addEventListener("change", handleStatusFilter);
+
+        // Image preview
+        document
+          .querySelector('input[name="image_url"]')
+          .addEventListener("change", handleImagePreview);
+      }
+
+      // Load Products
+      async function loadProducts(filters = {}) {
+        try {
+          showLoading();
+
+          let query = supabase
+            .from("products")
+            .select("*, product_variants(*)");
+
+          // Apply filters
+          if (filters.search) {
+            query = query.ilike("name", `%${filters.search}%`);
+          }
+          if (filters.status !== undefined) {
+            query = query.eq("is_active", filters.status);
+          }
+
+          const { data: products, error } = await query.order("created_at", {
+            ascending: false,
+          });
+
+          if (error) throw error;
+
+          currentProducts = products;
+          renderProductsTable(products);
+        } catch (error) {
+          console.error("Error loading products:", error);
+          alert("Error loading products");
+        } finally {
+          hideLoading();
+        }
+      }
+
+      // Render Products Table
+      function renderProductsTable(products) {
+        const tbody = document.getElementById("productsTableBody");
+        tbody.innerHTML = products
+          .map(
+            (product) => `
+                <tr>
+                    <td><img src="${
+                      product.thumbnail
+                    }" class="product-image-preview"></td>
+                    <td>${product.name}</td>
+                    <td>Rp ${product.price.toLocaleString()}</td>
+                    <td>${getTotalStock(product.product_variants)}</td>
+                    <td>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" 
+                                   ${product.is_active ? "checked" : ""}
+                                   onchange="handleStatusToggle(${
+                                     product.id
+                                   }, this.checked)">
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editProduct(${
+                          product.id
+                        })">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${
+                          product.id
+                        })">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `
+          )
+          .join("");
+      }
+
+      // Handle Product Form Submit
+      async function handleProductSubmit(e) {
+        e.preventDefault();
+        try {
+          showLoading();
+
+          const formData = new FormData(e.target);
+          const productData = {
+            name: formData.get("name"),
+            description: formData.get("description"),
+            price: parseInt(formData.get("price")),
+            coin_plus: parseInt(formData.get("coin_plus")),
+            is_active: formData.get("is_active") === "on",
+          };
+
+          // Handle image upload
+          const imageUrl = formData.get("image_url");
+          if (imageUrl) {
+            productData.thumbnail = imageUrl;
+          }
+
+          // Save product
+          const productId = formData.get("id");
+          let productResult;
+
+          if (productId) {
+            // Update existing product
+            const { data, error } = await supabase
+              .from("products")
+              .update(productData)
+              .eq("id", productId)
+              .select()
+              .single();
+
+            if (error) throw error;
+            productResult = data;
+          } else {
+            // Create new product
+            const { data, error } = await supabase
+              .from("products")
+              .insert([productData])
+              .select()
+              .single();
+
+            if (error) throw error;
+            productResult = data;
+          }
+
+          // Handle variants
+          const variants = await getVariantsFromForm();
+
+          if (variants.length > 0) {
+            if (productId) {
+              // Delete existing variants
+              await supabase
+                .from("product_variants")
+                .delete()
+                .eq("product_id", productId);
+            }
+
+            // Insert new variants
+            const { error: variantError } = await supabase
+              .from("product_variants")
+              .insert(
+                variants.map((v) => ({
+                  ...v,
+                  product_id: productResult.id,
+                }))
+              );
+
+            if (variantError) throw variantError;
+          }
+
+          productModal.hide();
+          loadProducts();
+          resetForm();
+        } catch (error) {
+          console.error("Error saving product:", error);
+          alert("Error saving product");
+        } finally {
+          hideLoading();
+        }
+      }
+
+      // Helper Functions
+      function getTotalStock(variants) {
+        return variants.reduce((sum, variant) => sum + variant.stock, 0);
+      }
+
+      function addVariantField() {
+        const container = document.getElementById("variantsContainer");
+        const variantId = Date.now();
+        container.insertAdjacentHTML(
+          "beforeend",
+          `
+    <div class="variant-item" data-variant-id="${variantId}">
+      <div class="row mb-2">
+        <div class="col-md-3">
+          <input type="text" class="form-control" 
+                 name="variant_name_${variantId}" 
+                 placeholder="Variant Name" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" class="form-control" 
+                 name="variant_price_${variantId}" 
+                 placeholder="Price" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" class="form-control" 
+                 name="variant_stock_${variantId}" 
+                 placeholder="Stock" required>
+        </div>
+        <div class="col-md-4">
+          <input type="url" class="form-control" 
+                 name="variant_image_${variantId}"
+                 placeholder="Enter variant image URL"
+                 onchange="previewVariantImage(this, ${variantId})">
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-outline-danger" 
+                  onclick="this.closest('.variant-item').remove()">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="variant-image-preview mb-2" id="variant_preview_${variantId}"></div>
+    </div>
+  `
+        );
+      }
+
+      // Add this function for variant image preview
+      window.previewVariantImage = function (input, variantId) {
+        const preview = document.getElementById(`variant_preview_${variantId}`);
+        if (input.value) {
+          preview.innerHTML = `
+      <img src="${input.value}" 
+           alt="Variant preview" 
+           style="height: 80px; object-fit: cover; border-radius: 4px;">
+    `;
+        }
+      };
+
+      function getVariantsFromForm() {
+        const variants = [];
+        for (const item of document.querySelectorAll(".variant-item")) {
+          const variantId = item.dataset.variantId;
+          variants.push({
+            variant_name: item.querySelector(
+              `[name="variant_name_${variantId}"]`
+            ).value,
+            price: parseInt(
+              item.querySelector(`[name="variant_price_${variantId}"]`).value
+            ),
+            stock: parseInt(
+              item.querySelector(`[name="variant_stock_${variantId}"]`).value
+            ),
+            thumbnail:
+              item.querySelector(`[name="variant_image_${variantId}"]`).value ||
+              null,
+          });
+        }
+        return variants;
+      }
+
+      function handleImagePreview(e) {
+        const url = e.target.value;
+        if (url) {
+          document.getElementById("imagePreview").src = url;
+        }
+      }
+
+      function showLoading() {
+        loadingOverlay.style.display = "flex";
+      }
+
+      function hideLoading() {
+        loadingOverlay.style.display = "none";
+      }
+
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      function resetForm() {
+        document.getElementById("productForm").reset();
+        document.getElementById("imagePreview").src =
+          "https://via.placeholder.com/150x150";
+        document.getElementById("variantsContainer").innerHTML = "";
+        document.getElementById("productId").value = "";
+        document.getElementById("modalTitle").textContent = "Add New Product";
+      }
+
+      function handleSearch(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        loadProducts({ search: searchTerm });
+      }
+
+      function handleStatusFilter(e) {
+        const status = e.target.value;
+        loadProducts({
+          status:
+            status === "active"
+              ? true
+              : status === "inactive"
+              ? false
+              : undefined,
+        });
+      }
+
+      // Make these functions available globally
+      window.editProduct = async function (productId) {
+        try {
+          const product = currentProducts.find((p) => p.id === productId);
+          if (!product) throw new Error("Product not found");
+
+          document.getElementById("productId").value = product.id;
+          document.getElementById("modalTitle").textContent = "Edit Product";
+
+          // Fill form fields
+          const form = document.getElementById("productForm");
+          form.querySelector('[name="name"]').value = product.name;
+          form.querySelector('[name="description"]').value =
+            product.description;
+          form.querySelector('[name="price"]').value = product.price;
+          form.querySelector('[name="coin_plus"]').value = product.coin_plus;
+          form.querySelector('[name="is_active"]').checked = product.is_active;
+
+          // Show current image
+          document.getElementById("imagePreview").src = product.thumbnail;
+
+          // Load variants with thumbnails
+          const variantsContainer =
+            document.getElementById("variantsContainer");
+          variantsContainer.innerHTML = "";
+          product.product_variants.forEach((variant) => {
+            const variantId = Date.now();
+            variantsContainer.insertAdjacentHTML(
+              "beforeend",
+              `
+        <div class="variant-item" data-variant-id="${variantId}">
+          <div class="row mb-2">
+            <div class="col-md-3">
+              <input type="text" class="form-control" 
+                     name="variant_name_${variantId}" 
+                     value="${variant.variant_name}" required>
+            </div>
+            <div class="col-md-2">
+              <input type="number" class="form-control" 
+                     name="variant_price_${variantId}" 
+                     value="${variant.price}" required>
+            </div>
+            <div class="col-md-2">
+              <input type="number" class="form-control" 
+                     name="variant_stock_${variantId}" 
+                     value="${variant.stock}" required>
+            </div>
+            <div class="col-md-4">
+              <div class="input-group">
+                <input type="file" class="form-control" 
+                       name="variant_image_${variantId}"
+                       accept="image/*"
+                       onchange="previewVariantImage(this, ${variantId})">
+              </div>
+            </div>
+            <div class="col-md-1">
+              <button type="button" class="btn btn-outline-danger" 
+                      onclick="this.closest('.variant-item').remove()">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="variant-image-preview mb-2" id="variant_preview_${variantId}">
+            ${
+              variant.thumbnail
+                ? `
+              <img src="${variant.thumbnail}" 
+                   alt="Variant preview" 
+                   style="height: 80px; object-fit: cover; border-radius: 4px;">
+            `
+                : ""
+            }
+          </div>
+        </div>
+      `
+            );
+          });
+
+          // Show modal
+          const productModal = new bootstrap.Modal(
+            document.getElementById("productModal")
+          );
+          productModal.show();
+        } catch (error) {
+          console.error("Error editing product:", error);
+          alert("Error loading product details");
+        }
+      };
+
+      window.deleteProduct = async function (productId) {
+        if (!confirm("Are you sure you want to delete this product?")) return;
+
+        try {
+          showLoading();
+
+          // Delete product variants first
+          const { error: variantError } = await supabase
+            .from("product_variants")
+            .delete()
+            .eq("product_id", productId);
+
+          if (variantError) throw variantError;
+
+          // Then delete the product
+          const { error: productError } = await supabase
+            .from("products")
+            .delete()
+            .eq("id", productId);
+
+          if (productError) throw productError;
+
+          loadProducts();
+        } catch (error) {
+          console.error("Error deleting product:", error);
+          alert("Error deleting product");
+        } finally {
+          hideLoading();
+        }
+      };
+
+      window.handleStatusToggle = async function (productId, isActive) {
+        try {
+          showLoading();
+
+          const { error } = await supabase
+            .from("products")
+            .update({ is_active: isActive })
+            .eq("id", productId);
+
+          if (error) throw error;
+
+          loadProducts();
+        } catch (error) {
+          console.error("Error updating product status:", error);
+          alert("Error updating product status");
+        } finally {
+          hideLoading();
+        }
+      };
+    </script>
+  </body>
+</html>

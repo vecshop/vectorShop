@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to MyStore</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #f8f9fa;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .landing-container {
+        background-color: #ffffff;
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 360px;
+        width: 100%;
+      }
+
+      .brand-logo {
+        width: 120px;
+        height: 120px;
+        background-color: #e3f2fd;
+        border-radius: 60px;
+        margin: 0 auto 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .welcome-text {
+        color: #1e88e5;
+        margin-bottom: 1.5rem;
+      }
+
+      .start-button {
+        background-color: #1e88e5;
+        color: white;
+        padding: 12px 40px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: background-color 0.3s ease;
+      }
+
+      .start-button:hover {
+        background-color: #1565c0;
+        color: white;
+      }
+
+      .tagline {
+        color: #757575;
+        font-size: 0.9rem;
+        margin-top: 1.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="landing-container">
+      <div class="brand-logo">
+        <!-- Ganti dengan logo Anda -->
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="#1e88e5">
+          <path
+            d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+          ></path>
+        </svg>
+      </div>
+      <h1 class="welcome-text">Welcome to MyStore</h1>
+      <p class="mb-4">Discover amazing products and services</p>
+      <a href="pages/home.html" class="start-button"> Get Started </a>
+      <p class="tagline">Your one-stop shop for everything you need</p>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

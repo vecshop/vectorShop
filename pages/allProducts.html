@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Products - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+      /* Navbar styles - sama dengan home.html */
+      .navbar {
+        padding: 0.5rem 1rem;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-box {
+        position: relative;
+        width: 100%;
+        max-width: 180px;
+      }
+
+      .search-box input {
+        padding-right: 30px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        font-size: 0.9rem;
+      }
+
+      .search-box .bi-search {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+      }
+
+      .menu-section {
+        background: white;
+        padding: 0.75rem 1rem;
+        overflow-x: auto;
+        white-space: nowrap;
+        border-bottom: 1px solid #eee;
+        scrollbar-width: none;
+      }
+
+      .menu-item {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        color: #666;
+        text-decoration: none;
+        border-radius: 20px;
+        margin-right: 0.5rem;
+        scrollbar-width: none;
+      }
+
+      .menu-item.active {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .price-sort {
+        position: relative;
+      }
+
+      .price-sort i {
+        font-size: 0.8rem;
+        margin-left: 4px;
+      }
+
+      /* Filter styles */
+      .filter-section {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        z-index: 1000;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        height: 80vh;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+      }
+
+      .filter-section.show {
+        transform: translateY(0);
+      }
+
+      .filter-header {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+      }
+
+      .filter-content {
+        padding: 1rem;
+      }
+
+      .filter-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .filter-group-title {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Sort dropdown */
+      .sort-dropdown {
+        width: auto;
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      /* Product grid */
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 1rem;
+        margin-bottom: 20px;
+      }
+
+      .product-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .product-image {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+      }
+
+      .product-details {
+        padding: 0.75rem;
+      }
+
+      .product-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .product-price {
+        color: var(--primary-color);
+        font-weight: bold;
+        font-size: 0.9rem;
+      }
+
+      .product-rating {
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar fixed-top">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <a
+            href="#"
+            class="text-dark"
+            onclick="window.history.back(); return false;"
+          >
+            <i class="bi bi-arrow-left fs-5"></i>
+          </a>
+          <div class="search-box flex-grow-1">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search products..."
+            />
+            <i class="bi bi-search"></i>
+          </div>
+          <a
+            href="#"
+            class="text-dark d-flex align-items-center"
+            id="showFilter"
+          >
+            <i class="bi bi-funnel me-1"></i>
+            <span style="font-size: 0.8rem">Filter</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="menu-section" style="margin-top: 56px">
+      <a href="#" class="menu-item active" data-sort="newest">Terbaru</a>
+      <a href="#" class="menu-item" data-sort="related">Terkait</a>
+      <a href="#" class="menu-item" data-sort="bestseller">Terlaris</a>
+      <a href="#" class="menu-item price-sort" data-sort="price">
+        Harga
+        <i class="bi bi-chevron-down"></i>
+      </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="products-grid">
+        <!-- Products will be loaded dynamically -->
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section" id="filterSection">
+      <div class="filter-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Filters</h5>
+          <button class="btn-close" id="closeFilter"></button>
+        </div>
+      </div>
+
+      <div class="filter-content">
+        <!-- Price Range -->
+        <div class="filter-group">
+          <div class="filter-group-title">Price Range</div>
+          <div class="row g-2">
+            <div class="col-6">
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Min"
+                id="minPrice"
+              />
+            </div>
+            <div class="col-6">
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Max"
+                id="maxPrice"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Brand -->
+        <div class="filter-group">
+          <div class="filter-group-title">Brand</div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              value="brand1"
+              id="brand1"
+            />
+            <label class="form-check-label" for="brand1">Brand 1</label>
+          </div>
+          <!-- More brands -->
+        </div>
+
+        <!-- Type -->
+        <div class="filter-group">
+          <div class="filter-group-title">Type</div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              value="type1"
+              id="type1"
+            />
+            <label class="form-check-label" for="type1">Type 1</label>
+          </div>
+          <!-- More types -->
+        </div>
+
+        <!-- Rating -->
+        <div class="filter-group">
+          <div class="filter-group-title">Rating</div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              value="4up"
+              id="rating4"
+            />
+            <label class="form-check-label" for="rating4">4★ & up</label>
+          </div>
+          <!-- More ratings -->
+        </div>
+
+        <!-- Apply Filter Button -->
+        <button class="btn btn-primary w-100" id="applyFilter">
+          Apply Filter
+        </button>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { getProducts, searchProducts } from "../assets/js/supabase.js";
+
+      // Filter functionality
+      const filterIcon = document.getElementById("showFilter");
+      const closeFilterBtn = document.getElementById("closeFilter");
+      const filterSection = document.getElementById("filterSection");
+      const applyFilterBtn = document.getElementById("applyFilter");
+
+      filterIcon.addEventListener("click", () => {
+        filterSection.classList.add("show");
+      });
+
+      closeFilterBtn.addEventListener("click", () => {
+        filterSection.classList.remove("show");
+      });
+
+      // Load products
+      async function loadProducts(filters = {}) {
+        try {
+          let products;
+
+          // If search query exists, use searchProducts instead of getProducts
+          if (filters.search) {
+            products = await searchProducts(filters.search);
+          } else {
+            products = await getProducts();
+          }
+
+          if (!products) {
+            console.error("No products returned");
+            return;
+          }
+
+          // Sort products based on filter
+          if (filters.sort) {
+            products.sort((a, b) => {
+              switch (filters.sort) {
+                case "newest":
+                  return new Date(b.created_at) - new Date(a.created_at);
+                case "bestseller":
+                  return (b.sales_count || 0) - (a.sales_count || 0);
+                case "price-low":
+                  return a.price - b.price;
+                case "price-high":
+                  return b.price - a.price;
+                default:
+                  return 0;
+              }
+            });
+          }
+
+          const productsGrid = document.querySelector(".products-grid");
+          if (!productsGrid) {
+            console.error("Products grid element not found");
+            return;
+          }
+
+          if (products.length === 0) {
+            productsGrid.innerHTML = `
+        <div class="col-12 text-center p-4">
+          <p class="text-muted">No products found matching "${filters.search}"</p>
+        </div>
+      `;
+            return;
+          }
+
+          productsGrid.innerHTML = products
+            .map(
+              (product) => `
+      <div class="product-card">
+        <a href="detailProduct.html?id=${
+          product.id
+        }" style="text-decoration: none; color: inherit;">
+          <img src="${product.thumbnail}" class="product-image" alt="${
+                product.name
+              }">
+          <div class="product-details">
+            <h6 class="product-title">${product.name}</h6>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="product-price">Rp ${product.price.toLocaleString()}</span>
+              <span class="product-rating">
+                <i class="bi bi-star-fill text-warning"></i>
+                ${product.rating}
+              </span>
+            </div>
+          </div>
+        </a>
+      </div>
+    `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error loading products:", error);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.querySelector(".search-box input");
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get("q");
+
+        if (searchQuery) {
+          searchInput.value = searchQuery;
+          loadProducts({ search: searchQuery });
+        } else {
+          loadProducts();
+        }
+
+        searchInput.addEventListener("click", (e) => {
+          e.preventDefault();
+          const currentQuery = e.target.value;
+          window.location.href = `searchPage.html${
+            currentQuery ? `?q=${encodeURIComponent(currentQuery)}` : ""
+          }`;
+        });
+      });
+
+      // Apply filters
+      applyFilterBtn.addEventListener("click", () => {
+        const minPrice = document.getElementById("minPrice").value;
+        const maxPrice = document.getElementById("maxPrice").value;
+        // Collect other filter values
+
+        loadProducts({
+          minPrice,
+          maxPrice,
+          // Add other filters
+        });
+
+        filterSection.classList.remove("show");
+      });
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", () => {
+        const menuItems = document.querySelectorAll(".menu-item");
+        const priceSort = document.querySelector(".price-sort");
+        let isPriceAsc = true;
+
+        menuItems.forEach((item) => {
+          item.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            // Remove active class from all items
+            menuItems.forEach((mi) => mi.classList.remove("active"));
+
+            // Add active class to clicked item
+            item.classList.add("active");
+
+            const sortType = item.dataset.sort;
+
+            if (sortType === "price") {
+              isPriceAsc = !isPriceAsc;
+              const icon = item.querySelector("i");
+              icon.className = `bi bi-chevron-${isPriceAsc ? "down" : "up"}`;
+              loadProducts({
+                sort: isPriceAsc ? "price-low" : "price-high",
+              });
+            } else {
+              loadProducts({ sort: sortType });
+            }
+          });
+        });
+
+        loadProducts();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+prompt :
+sekarang, saya ingin menambah fungsi pada search bar di home.html dan allProducts.html. langkah langkah :
+- buat halaman searchPage yang berisi arrow left, search bar, up to 5 suggestions product dan layanan yang dibedakan dan muncul berdasarkan keyword.
+- user dapat mencari produk dan layanan
+- jika keyword yang dipilih dalam layanan, maka akan diarahkan ke halaman allLayanan dengan url query sesuai keyword
+- jika keyword yang dipilih dalam Products, maka akan diarahkan ke halaman allProducts dengan url query sesuai keyword

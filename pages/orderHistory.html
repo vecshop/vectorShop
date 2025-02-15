@@ -1,0 +1,363 @@
+html
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order History - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+
+      .gradient-custom {
+        background: linear-gradient(
+          to right,
+          rgba(2, 71, 131, 1),
+          rgba(2, 71, 131, 0.8)
+        );
+      }
+
+      .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+
+      .status-processing {
+        background-color: #cce5ff;
+        color: #004085;
+      }
+
+      .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+      }
+
+      .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+
+      .order-link {
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s;
+      }
+
+      .order-link:hover {
+        transform: translateY(-2px);
+      }
+
+      .progress {
+        height: 3px;
+        margin: 1rem 0;
+      }
+
+      .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+      }
+
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background-color: #dee2e6;
+      }
+
+      .timeline-item::after {
+        content: "";
+        position: absolute;
+        left: -4px;
+        top: 0;
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar fixed-top bg-white">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center gap-3">
+          <a
+            href="#"
+            class="text-dark"
+            onclick="window.history.back(); return false;"
+          >
+            <i class="bi bi-arrow-left fs-5"></i>
+          </a>
+          <h6 class="mb-0">Order History</h6>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-top: 80px">
+      <!-- Filter Section -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-6">
+              <select class="form-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <select class="form-select" id="sortBy">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders List -->
+      <div id="ordersList">
+        <!-- Will be populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal">
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header gradient-custom text-white">
+            <h5 class="modal-title">Order Details</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script type="module">
+      import { supabase } from "../assets/js/supabase.js";
+
+      // Load orders
+      async function loadOrders() {
+        try {
+          let query = supabase
+            .from("service_orders")
+            .select(
+              `
+                        *,
+                        services:service_id(*),
+                        service_form_submissions(*)
+                    `
+            )
+            .order("created_at", { ascending: false });
+
+          // Apply status filter
+          const statusFilter = document.getElementById("statusFilter").value;
+          if (statusFilter) {
+            query = query.eq("status", statusFilter);
+          }
+
+          const { data: orders, error } = await query;
+
+          if (error) throw error;
+
+          renderOrders(orders);
+        } catch (error) {
+          console.error("Error loading orders:", error);
+        }
+      }
+
+      // Render orders list
+      function renderOrders(orders) {
+        const container = document.getElementById("ordersList");
+
+        if (!orders.length) {
+          container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <h5 class="mt-3">No Orders Found</h5>
+                        <p class="text-muted">You haven't made any orders yet</p>
+                    </div>
+                `;
+          return;
+        }
+
+        container.innerHTML = orders
+          .map(
+            (order) => `
+                <div class="card mb-3 order-link" onclick="showOrderDetails('${
+                  order.id
+                }')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1">${order.services.name}</h6>
+                                <small class="text-muted">Order #${
+                                  order.id
+                                }</small>
+                            </div>
+                            <span class="status-badge status-${order.status.toLowerCase()}">${
+              order.status
+            }</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <small class="text-muted d-block">Level: ${
+                                  order.level
+                                }</small>
+                                <small class="text-muted">${new Date(
+                                  order.created_at
+                                ).toLocaleDateString()}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      // Show order details
+      window.showOrderDetails = async function (orderId) {
+        try {
+          const { data: order, error } = await supabase
+            .from("service_orders")
+            .select(
+              `
+                        *,
+                        services:service_id(*),
+                        service_form_submissions(*)
+                    `
+            )
+            .eq("id", orderId)
+            .single();
+
+          if (error) throw error;
+
+          const modal = document.getElementById("orderDetailsModal");
+          const modalBody = modal.querySelector(".modal-body");
+
+          modalBody.innerHTML = `
+                    <div class="mb-4">
+                        <h6>Service</h6>
+                        <p class="mb-1">${order.services.name}</p>
+                        <small class="text-muted">Level: ${order.level}</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Status</h6>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" style="width: ${getProgressWidth(
+                              order.status
+                            )}%"></div>
+                        </div>
+                        <div class="timeline">
+                            ${getStatusTimeline(order.status)}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Submission Details</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <pre class="mb-0"><code>${JSON.stringify(
+                                  order.service_form_submissions[0]?.form_data,
+                                  null,
+                                  2
+                                )}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+          new bootstrap.Modal(modal).show();
+        } catch (error) {
+          console.error("Error loading order details:", error);
+        }
+      };
+
+      // Utility functions
+      function getProgressWidth(status) {
+        const stages = ["pending", "processing", "completed"];
+        const currentIndex = stages.indexOf(status.toLowerCase());
+        return ((currentIndex + 1) / stages.length) * 100;
+      }
+
+      function getStatusTimeline(currentStatus) {
+        const statuses = [
+          { status: "pending", label: "Order Received" },
+          { status: "processing", label: "Processing" },
+          { status: "completed", label: "Completed" },
+        ];
+
+        const currentIndex = statuses.findIndex(
+          (s) => s.status === currentStatus.toLowerCase()
+        );
+
+        return statuses
+          .map(
+            (status, index) => `
+                <div class="timeline-item mb-3 ${
+                  index <= currentIndex ? "text-dark" : "text-muted"
+                }">
+                    <h6 class="mb-1">${status.label}</h6>
+                    <small>${index <= currentIndex ? "Done" : "Waiting"}</small>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      // Event listeners
+      document
+        .getElementById("statusFilter")
+        .addEventListener("change", loadOrders);
+      document.getElementById("sortBy").addEventListener("change", (e) => {
+        const ascending = e.target.value === "oldest";
+        supabase
+          .from("service_orders")
+          .order("created_at", { ascending })
+          .then(loadOrders);
+      });
+
+      // Initial load
+      document.addEventListener("DOMContentLoaded", loadOrders);
+    </script>
+  </body>
+</html>

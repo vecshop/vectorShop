@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Service Detail - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+
+      .navbar {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Service Header */
+      .service-header {
+        background: white;
+        padding: 1rem;
+      }
+
+      .service-icon {
+        width: 60px;
+        height: 60px;
+        background: #e3f2fd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+        font-size: 1.5rem;
+      }
+
+      .service-rating {
+        color: #ffc107;
+      }
+
+      /* Level Tabs */
+      .level-tabs {
+        background: white;
+        margin-top: 8px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .level-tab {
+        padding: 1rem;
+        text-align: center;
+        color: #666;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+      }
+
+      .level-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+      }
+
+      /* Level Content */
+      .level-content {
+        background: white;
+        padding: 1rem;
+      }
+
+      .price-tag {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+      }
+
+      .coin-plus {
+        color: #ffa726;
+        font-size: 0.9rem;
+      }
+
+      .feature-list {
+        margin-top: 1rem;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .feature-check {
+        color: #4caf50;
+      }
+
+      /* Description */
+      .description-section {
+        background: white;
+        padding: 1rem;
+        margin-top: 8px;
+      }
+
+      /* Action Bar */
+      .action-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 1rem;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        gap: 1rem;
+        z-index: 1000;
+      }
+
+      .action-button {
+        flex: 1;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      .contact-btn {
+        background: #e3f2fd;
+        color: var(--primary-color);
+      }
+
+      .order-btn {
+        background: var(--primary-color);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar fixed-top">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center gap-3">
+          <a href="home.html" class="text-dark">
+            <i class="bi bi-arrow-left fs-5"></i>
+          </a>
+          <h6 class="mb-0">Service Detail</h6>
+        </div>
+        <div class="d-flex gap-3">
+          <a href="#" class="text-dark">
+            <i class="bi bi-share fs-5"></i>
+          </a>
+          <a href="#" class="text-dark">
+            <i class="bi bi-bookmark fs-5"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-top: 56px; margin-bottom: 80px">
+      <!-- Service Header -->
+      <div class="service-header">
+        <div class="d-flex gap-3 mb-3">
+          <div class="service-icon">
+            <i class="bi bi-camera"></i>
+          </div>
+          <div>
+            <h5 class="service-name mb-1"></h5>
+            <div class="d-flex align-items-center gap-2">
+              <div class="service-rating">
+                <i class="bi bi-star-fill"></i>
+                <span class="rating-value"></span>
+              </div>
+              <span class="text-muted">|</span>
+              <span class="text-muted orders-count"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level Tabs -->
+      <div class="level-tabs d-flex">
+        <div class="level-tab flex-1 active" data-level="basic">Basic</div>
+        <div class="level-tab flex-1" data-level="middle">Middle</div>
+        <div class="level-tab flex-1" data-level="premium">Premium</div>
+      </div>
+
+      <!-- Level Content -->
+      <div class="level-content">
+        <div class="price-tag mb-2"></div>
+        <div class="coin-plus mb-3"></div>
+        <div class="feature-list">
+          <!-- Features will be loaded dynamically -->
+        </div>
+      </div>
+      <div class="description-section">
+        <h6 class="mb-3">Description</h6>
+        <div class="description-content text-muted">
+          <!-- Description will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="action-button contact-btn">Contact Provider</button>
+      <button class="action-button order-btn">Order Now</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { supabase } from "../assets/js/supabase.js";
+
+      // Get service ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const serviceId = urlParams.get("id");
+
+      // Load service details
+      async function loadServiceDetails() {
+        try {
+          const { data: service, error } = await supabase
+            .from("services")
+            .select(
+              `
+        *,
+        service_levels(*)
+      `
+            )
+            .eq("id", serviceId)
+            .single();
+
+          if (error) throw error;
+
+          // Update service info
+          document.querySelector(
+            ".service-icon i"
+          ).className = `bi ${service.icon}`;
+          document.querySelector(".service-name").textContent = service.name;
+          document.querySelector(".rating-value").textContent = service.rating;
+          document.querySelector(".orders-count").textContent = "50+ Orders";
+          document.querySelector(".description-content").textContent =
+            service.description;
+
+          // Set initial level content
+          updateLevelContent("basic", service.service_levels);
+        } catch (error) {
+          console.error("Error loading service details:", error);
+        }
+      }
+
+      // Update level content
+      async function updateLevelContent(level, serviceLevels) {
+        try {
+          const levelData = serviceLevels.find((l) => l.level === level);
+          if (!levelData) return;
+
+          // Update price and coin plus
+          document.querySelector(
+            ".price-tag"
+          ).textContent = `Rp ${levelData.price.toLocaleString()}`;
+          document.querySelector(
+            ".coin-plus"
+          ).textContent = `+${levelData.coin_plus} coins`;
+
+          // Update description if exists
+          if (levelData.description) {
+            const descriptionEl = document.querySelector(
+              ".level-content .description"
+            );
+            if (descriptionEl) {
+              descriptionEl.textContent = levelData.description;
+            } else {
+              const descDiv = document.createElement("div");
+              descDiv.className = "description mb-3";
+              descDiv.textContent = levelData.description;
+              document
+                .querySelector(".coin-plus")
+                .insertAdjacentElement("afterend", descDiv);
+            }
+          }
+
+          // Update features
+          const featureList = document.querySelector(".feature-list");
+          featureList.innerHTML = "";
+
+          const features = levelData.features.split(",").map((f) => f.trim());
+          features.forEach((feature) => {
+            featureList.innerHTML += `
+        <div class="feature-item">
+          <i class="bi bi-check-circle feature-check"></i>
+          <span>${feature}</span>
+        </div>
+      `;
+          });
+        } catch (error) {
+          console.error("Error updating level content:", error);
+        }
+      }
+
+      // Level tab handlers
+      document.querySelectorAll(".level-tab").forEach((tab) => {
+        tab.addEventListener("click", async () => {
+          // Update active tab
+          document
+            .querySelectorAll(".level-tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+
+          // Get service data with levels
+          const { data: service } = await supabase
+            .from("services")
+            .select(`*, service_levels(*)`)
+            .eq("id", serviceId)
+            .single();
+
+          // Update content
+          updateLevelContent(tab.dataset.level, service.service_levels);
+        });
+      });
+
+      // Order handler
+      document.querySelector(".order-btn").addEventListener("click", () => {
+        const selectedLevel =
+          document.querySelector(".level-tab.active").dataset.level;
+        window.location.href = `buyLayanan.html?id=${serviceId}&level=${selectedLevel}`;
+      });
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", loadServiceDetails);
+    </script>
+  </body>
+</html>

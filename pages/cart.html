@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shopping Cart - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+      .navbar {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Cart Item Styles */
+      .cart-item {
+        background: white;
+        padding: 1rem;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .cart-item-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .cart-item-details {
+        flex: 1;
+      }
+
+      .cart-item-title {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .cart-item-variant {
+        font-size: 0.8rem;
+        color: #757575;
+        margin-bottom: 4px;
+      }
+
+      .cart-item-price {
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      /* Quantity Controls */
+      .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .quantity-btn {
+        width: 24px;
+        height: 24px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+      }
+
+      .quantity-input {
+        width: 36px;
+        text-align: center;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 0.25rem;
+        font-size: 0.9rem;
+      }
+
+      /* Bottom Summary */
+      .cart-summary {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        z-index: 1000;
+      }
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #eee;
+      }
+
+      .total-amount {
+        color: var(--primary-color);
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .checkout-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.75rem;
+        width: 100%;
+        font-weight: 600;
+        margin-top: 1rem;
+      }
+
+      /* Empty Cart State */
+      .empty-cart {
+        text-align: center;
+        padding: 2rem;
+        color: #757575;
+      }
+
+      .empty-cart i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar fixed-top">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center gap-3">
+          <a
+            href="#"
+            class="text-dark"
+            onclick="window.history.back(); return false;"
+          >
+            <i class="bi bi-arrow-left fs-5"></i>
+          </a>
+          <h6 class="mb-0">Shopping Cart</h6>
+        </div>
+        <div class="d-flex align-items-center gap-3" id="navbarActions">
+          <!-- Normal Mode -->
+          <div class="normal-mode">
+            <button class="btn btn-link p-0 text-dark" id="editBtn">
+              <i class="bi bi-pencil fs-5"></i>
+            </button>
+          </div>
+          <!-- Edit Mode (initially hidden) -->
+          <div class="edit-mode d-none">
+            <button
+              class="btn btn-link p-0 text-danger me-3"
+              id="deleteSelected"
+            >
+              <i class="bi bi-trash fs-5"></i>
+            </button>
+            <button class="btn btn-link p-0 text-dark" id="cancelEdit">
+              <i class="bi bi-x-lg fs-5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-top: 56px; margin-bottom: 180px">
+      <div id="cartItems">
+        <!-- Cart items will be loaded dynamically -->
+      </div>
+
+      <!-- Empty Cart State -->
+      <div class="empty-cart d-none" id="emptyCart">
+        <i class="bi bi-cart-x"></i>
+        <h5>Your cart is empty</h5>
+        <p>Browse our products and add items to your cart</p>
+        <a href="allProducts.html" class="btn btn-primary">
+          Continue Shopping
+        </a>
+      </div>
+    </div>
+
+    <!-- Cart Summary -->
+    <div class="cart-summary" id="cartSummary">
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="subtotal">Rp 0</span>
+      </div>
+      <div class="summary-row">
+        <span>Shipping Fee</span>
+        <span id="shippingFee">Rp 0</span>
+      </div>
+      <div class="total-row">
+        <span>Total</span>
+        <span id="total" class="total-amount">Rp 0</span>
+      </div>
+      <button class="checkout-btn" id="checkoutBtn">
+        Checkout (<span id="itemCount">0</span> items)
+      </button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { supabase, cartManager } from "../assets/js/supabase.js";
+
+      let cartItems = [];
+      let isEditMode = false;
+      const selectedItems = new Set();
+
+      function toggleEditMode(enabled) {
+        isEditMode = enabled;
+        document
+          .querySelector(".normal-mode")
+          .classList.toggle("d-none", enabled);
+        document
+          .querySelector(".edit-mode")
+          .classList.toggle("d-none", !enabled);
+
+        // Clear selections when entering/exiting edit mode
+        selectedItems.clear();
+        document.querySelectorAll(".item-checkbox").forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+
+        updateSummary();
+      }
+
+      // Load cart items
+      async function loadCartItems() {
+        try {
+          const cart = cartManager.getCart();
+          if (cart.length === 0) {
+            showEmptyCart();
+            return;
+          }
+
+          // Convert string IDs to numbers
+          const productIds = [
+            ...new Set(cart.map((item) => parseInt(item.id))),
+          ];
+          console.log("Fetching products with IDs:", productIds); // Debug log
+
+          const { data: products, error } = await supabase
+            .from("products")
+            .select("*, product_variants(*)")
+            .in("id", productIds);
+
+          if (error) throw error;
+
+          console.log("Found products:", products); // Debug log
+
+          cartItems = cart
+            .map((cartItem) => {
+              const product = products.find(
+                (p) => p.id === parseInt(cartItem.id)
+              );
+              if (!product) {
+                console.warn(`Product ${cartItem.id} not found in:`, products);
+                return null;
+              }
+
+              const variant = product.product_variants.find(
+                (v) => v.id === parseInt(cartItem.variantId)
+              );
+              if (!variant) {
+                console.warn(
+                  `Variant ${cartItem.variantId} not found for product ${cartItem.id}`
+                );
+                return null;
+              }
+
+              return {
+                ...cartItem,
+                id: parseInt(cartItem.id),
+                variantId: parseInt(cartItem.variantId),
+                productName: product.name,
+                thumbnail: product.thumbnail,
+                variantName: variant.variant_name,
+                price: variant.price,
+              };
+            })
+            .filter((item) => item !== null);
+
+          if (cartItems.length === 0) {
+            showEmptyCart();
+            return;
+          }
+
+          renderCartItems();
+          updateSummary();
+        } catch (error) {
+          console.error("Error loading cart items:", error);
+          showEmptyCart();
+        }
+      }
+
+      // Render cart items
+      function renderCartItems() {
+        const cartItemsContainer = document.getElementById("cartItems");
+        cartItemsContainer.innerHTML = "";
+
+        cartItems.forEach((item) => {
+          cartItemsContainer.innerHTML += `
+      <div class="cart-item" data-id="${item.id}" data-variant-id="${
+            item.variantId
+          }">
+        <div class="d-flex gap-3">
+          <div class="form-check">
+            <input class="form-check-input item-checkbox" type="checkbox" value="" 
+              data-id="${item.id}" data-variant-id="${item.variantId}">
+          </div>
+          <img src="${item.thumbnail}" class="cart-item-image" alt="${
+            item.productName
+          }">
+          <div class="cart-item-details">
+            <h6 class="cart-item-title">${item.productName}</h6>
+            <div class="cart-item-variant">Variant: ${item.variantName}</div>
+            <div class="cart-item-price">Rp ${item.price.toLocaleString()}</div>
+            <div class="quantity-control">
+              <button class="quantity-btn decrease">-</button>
+              <input type="number" class="quantity-input" value="${
+                item.quantity
+              }" min="1">
+              <button class="quantity-btn increase">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+        });
+
+        addCartItemListeners();
+      }
+
+      // Add event listeners to cart items
+      function addCartItemListeners() {
+        document.querySelectorAll(".quantity-control").forEach((control) => {
+          const input = control.querySelector(".quantity-input");
+          const decrease = control.querySelector(".decrease");
+          const increase = control.querySelector(".increase");
+          const cartItem = control.closest(".cart-item");
+          const itemId = parseInt(cartItem.dataset.id);
+          const variantId = parseInt(cartItem.dataset.variantId);
+
+          function updateItemQuantity(newQuantity) {
+            if (newQuantity < 1) return;
+
+            // Update UI
+            input.value = newQuantity;
+
+            // Update localStorage directly
+            const cart = JSON.parse(localStorage.getItem("cart")) || [];
+            const cartItem = cart.find(
+              (item) =>
+                parseInt(item.id) === itemId &&
+                parseInt(item.variantId) === variantId
+            );
+
+            if (cartItem) {
+              cartItem.quantity = newQuantity;
+              localStorage.setItem("cart", JSON.stringify(cart));
+            }
+
+            // Update current cartItems array
+            const item = cartItems.find(
+              (item) => item.id === itemId && item.variantId === variantId
+            );
+            if (item) {
+              item.quantity = newQuantity;
+            }
+
+            // Update cart badge and summary
+            cartManager.updateCartBadge();
+            updateSummary();
+          }
+
+          decrease.addEventListener("click", () => {
+            const currentQuantity = parseInt(input.value);
+            if (currentQuantity > 1) {
+              updateItemQuantity(currentQuantity - 1);
+            }
+          });
+
+          increase.addEventListener("click", () => {
+            const currentQuantity = parseInt(input.value);
+            updateItemQuantity(currentQuantity + 1);
+          });
+
+          input.addEventListener("change", () => {
+            let newQuantity = parseInt(input.value) || 1;
+            if (newQuantity < 1) newQuantity = 1;
+            updateItemQuantity(newQuantity);
+          });
+        });
+
+        document.querySelectorAll(".item-checkbox").forEach((checkbox) => {
+          checkbox.addEventListener("change", () => {
+            const id = checkbox.dataset.id;
+            const variantId = checkbox.dataset.variantId;
+            const key = `${id}-${variantId}`;
+
+            if (checkbox.checked) {
+              selectedItems.add(key);
+            } else {
+              selectedItems.delete(key);
+            }
+
+            updateSummary();
+          });
+        });
+      }
+
+      // Add styles
+      const styles = `
+  .form-check {
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-check-input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+  }
+  
+  .edit-mode .item-checkbox {
+    background-color: #ff4d4f;
+    border-color: #ff4d4f;
+  }
+`;
+
+      // Add style element
+      const styleSheet = document.createElement("style");
+      styleSheet.innerText = styles;
+      document.head.appendChild(styleSheet);
+
+      // Update cart summary
+      function updateSummary() {
+        const subtotal = cartItems.reduce((sum, item) => {
+          if (
+            !isEditMode &&
+            selectedItems.has(`${item.id}-${item.variantId}`)
+          ) {
+            return sum + item.price * item.quantity;
+          }
+          return sum;
+        }, 0);
+
+        const shippingFee = subtotal > 0 ? 10000 : 0;
+        const total = subtotal + shippingFee;
+        const itemCount = cartItems.reduce((sum, item) => {
+          if (
+            !isEditMode &&
+            selectedItems.has(`${item.id}-${item.variantId}`)
+          ) {
+            return sum + item.quantity;
+          }
+          return sum;
+        }, 0);
+
+        document.getElementById(
+          "subtotal"
+        ).textContent = `Rp ${subtotal.toLocaleString()}`;
+        document.getElementById(
+          "shippingFee"
+        ).textContent = `Rp ${shippingFee.toLocaleString()}`;
+        document.getElementById(
+          "total"
+        ).textContent = `Rp ${total.toLocaleString()}`;
+        document.getElementById("itemCount").textContent = itemCount;
+
+        // Update checkout button state
+        const checkoutBtn = document.getElementById("checkoutBtn");
+        checkoutBtn.disabled = itemCount === 0;
+      }
+
+      // Show empty cart state
+      function showEmptyCart() {
+        document.getElementById("cartItems").innerHTML = "";
+        document.getElementById("emptyCart").classList.remove("d-none");
+        document.getElementById("cartSummary").classList.add("d-none");
+      }
+
+      // Checkout handler
+      document.getElementById("checkoutBtn").addEventListener("click", () => {
+        const selectedCount = selectedItems.size;
+        if (selectedCount > 0) {
+          const selectedForCheckout = cartItems.filter((item) =>
+            selectedItems.has(`${item.id}-${item.variantId}`)
+          );
+
+          // Store only selected items for checkout
+          localStorage.setItem(
+            "checkoutItems",
+            JSON.stringify(selectedForCheckout)
+          );
+
+          // Navigate to checkout
+          window.location.href = "checkout.html";
+        } else {
+          alert("Please select items to checkout");
+        }
+      });
+
+      document
+        .getElementById("editBtn")
+        .addEventListener("click", () => toggleEditMode(true));
+      document
+        .getElementById("cancelEdit")
+        .addEventListener("click", () => toggleEditMode(false));
+
+      document
+        .getElementById("deleteSelected")
+        .addEventListener("click", () => {
+          if (selectedItems.size === 0) {
+            alert("Please select items to delete");
+            return;
+          }
+
+          if (confirm("Are you sure you want to delete selected items?")) {
+            selectedItems.forEach((itemKey) => {
+              const [id, variantId] = itemKey.split("-");
+              cartManager.removeFromCart(id, variantId);
+            });
+            loadCartItems();
+            toggleEditMode(false);
+          }
+        });
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", loadCartItems);
+    </script>
+  </body>
+</html>

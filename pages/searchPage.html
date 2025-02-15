@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+
+      .navbar {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 0.5rem 1rem;
+      }
+
+      .search-box {
+        position: relative;
+        flex-grow: 1;
+      }
+
+      .search-box input {
+        padding-right: 60px;
+        border-radius: 20px;
+      }
+
+      .search-box .search-clear,
+      .search-box .search-submit {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #666;
+        padding: 0.25rem 0.5rem;
+      }
+
+      .search-box .search-clear {
+        right: 35px;
+        display: none;
+      }
+
+      .search-box .search-submit {
+        right: 8px;
+      }
+
+      .exact-match {
+        background-color: #f8f9fa;
+        border-left: 3px solid var(--primary-color);
+      }
+
+      .exact-match:hover {
+        background-color: #e9ecef;
+      }
+
+      .suggestion-item i.bi-search {
+        font-size: 1.2rem;
+      }
+
+      .suggestions-section {
+        padding: 1rem;
+      }
+
+      .suggestion-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .suggestion-title {
+        font-size: 1rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+      }
+
+      mark {
+        background-color: #fff3cd;
+        padding: 0.1em 0.2em;
+        border-radius: 2px;
+      }
+
+      .no-results {
+        color: #666;
+        font-style: italic;
+        padding: 0.75rem;
+        text-align: center;
+      }
+
+      .suggestion-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .suggestion-item {
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        background: white;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .suggestion-item:hover {
+        background: #f8f9fa;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <nav class="navbar fixed-top">
+      <div class="d-flex align-items-center gap-3 w-100">
+        <a
+          href="#"
+          class="text-dark"
+          onclick="window.history.back(); return false;"
+        >
+          <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+        <div class="search-box">
+          <input
+            type="text"
+            class="form-control"
+            id="searchInput"
+            placeholder="Search products or services..."
+            autofocus
+          />
+          <button class="search-clear" id="searchClear">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          <button class="search-submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="suggestions-section" style="margin-top: 60px">
+      <div class="suggestion-group">
+        <div class="suggestion-title">Products</div>
+        <div id="productSuggestions" class="suggestion-list">
+          <!-- Products suggestions will be loaded here -->
+        </div>
+      </div>
+
+      <div class="suggestion-group">
+        <div class="suggestion-title">Services</div>
+        <div id="serviceSuggestions" class="suggestion-list">
+          <!-- Services suggestions will be loaded here -->
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { searchProducts, searchServices } from "../assets/js/supabase.js";
+
+      const searchInput = document.getElementById("searchInput");
+      const searchClear = document.getElementById("searchClear");
+      const productSuggestions = document.getElementById("productSuggestions");
+      const serviceSuggestions = document.getElementById("serviceSuggestions");
+
+      let searchTimeout;
+
+      // Get search query from URL if exists
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchQuery = urlParams.get("q");
+      const fromPage = urlParams.get("from");
+
+      if (searchQuery) {
+        searchInput.value = searchQuery;
+        performSearch(searchQuery);
+
+        // Update browser history to handle back navigation
+        if (!fromPage) {
+          window.history.replaceState(
+            {},
+            "",
+            `searchPage.html?q=${encodeURIComponent(searchQuery)}&from=direct`
+          );
+        }
+      }
+
+      // Handle input changes
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value;
+        searchClear.style.display = query ? "block" : "none";
+
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => performSearch(query), 300);
+      });
+
+      document
+        .querySelector(".search-box input")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          const currentQuery = e.target.value;
+          window.location.href = `searchPage.html${
+            currentQuery ? `?q=${encodeURIComponent(currentQuery)}` : ""
+          }`;
+        });
+
+      // Handle clear button
+      searchClear.addEventListener("click", () => {
+        searchInput.value = "";
+        searchClear.style.display = "none";
+        clearSuggestions();
+      });
+
+      async function performSearch(query) {
+        if (!query) {
+          clearSuggestions();
+          return;
+        }
+
+        try {
+          // Search in parallel for better performance
+          const [products, services] = await Promise.all([
+            searchProducts(query),
+            searchServices(query),
+          ]);
+
+          displayProductSuggestions(products, query);
+          displayServiceSuggestions(services, query);
+        } catch (error) {
+          console.error("Error performing search:", error);
+          // Show error state to user
+          productSuggestions.innerHTML = `<div class="no-results">Error loading suggestions</div>`;
+          serviceSuggestions.innerHTML = `<div class="no-results">Error loading suggestions</div>`;
+        }
+
+        window.addEventListener("popstate", () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const searchQuery = urlParams.get("q");
+
+          if (searchQuery) {
+            document.getElementById("searchInput").value = searchQuery;
+            performSearch(searchQuery);
+          } else {
+            document.getElementById("searchInput").value = "";
+            clearSuggestions();
+          }
+        });
+      }
+
+      function displayProductSuggestions(products, query) {
+        const container = document.getElementById("productSuggestions");
+
+        if (products.length === 0) {
+          container.innerHTML = `<div class="no-results">No relevant products found</div>`;
+          return;
+        }
+
+        // Find exact matches and close matches
+        const exactMatches = products.filter(
+          (p) => p.name.toLowerCase() === query.toLowerCase()
+        );
+        const closeMatches = products
+          .filter((p) => p.name.toLowerCase() !== query.toLowerCase())
+          .slice(0, 5);
+
+        container.innerHTML = `
+    <div class="suggestion-title"><strong>Products</strong></div>
+    ${
+      exactMatches.length > 0
+        ? `
+      <div class="suggestion-item exact-match" onclick="window.location.href='allProducts.html?q=${encodeURIComponent(
+        query
+      )}'">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-search text-primary"></i>
+          <div>
+            <div><strong>${highlightText(query, query)}</strong></div>
+            <small class="text-muted">in Products</small>
+          </div>
+        </div>
+      </div>
+    `
+        : ""
+    }
+    ${closeMatches
+      .map(
+        (product) => `
+      <div class="suggestion-item" onclick="window.location.href='allProducts.html?q=${encodeURIComponent(
+        product.name
+      )}'">
+        <div class="d-flex align-items-center gap-2">
+          <img src="${
+            product.thumbnail
+          }" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+          <div>
+            <div>${highlightText(product.name, query)}</div>
+            <div class="text-primary">Rp ${product.price.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+    `
+      )
+      .join("")}
+  `;
+      }
+
+      function displayServiceSuggestions(services, query) {
+        const container = document.getElementById("serviceSuggestions");
+
+        if (services.length === 0) {
+          container.innerHTML = `<div class="no-results">No relevant services found</div>`;
+          return;
+        }
+
+        // Find exact matches and close matches
+        const exactMatches = services.filter(
+          (s) => s.name.toLowerCase() === query.toLowerCase()
+        );
+        const closeMatches = services
+          .filter((s) => s.name.toLowerCase() !== query.toLowerCase())
+          .slice(0, 5);
+
+        container.innerHTML = `
+    <div class="suggestion-title"><strong>Services</strong></div>
+    ${
+      exactMatches.length > 0
+        ? `
+      <div class="suggestion-item exact-match" onclick="window.location.href='allLayanan.html?q=${encodeURIComponent(
+        query
+      )}'">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-search text-primary"></i>
+          <div>
+            <div><strong>${highlightText(query, query)}</strong></div>
+            <small class="text-muted">in Services</small>
+          </div>
+        </div>
+      </div>
+    `
+        : ""
+    }
+    ${closeMatches
+      .map(
+        (service) => `
+      <div class="suggestion-item" onclick="window.location.href='allLayanan.html?q=${encodeURIComponent(
+        service.name
+      )}'">
+        <div class="d-flex align-items-center gap-2">
+          <div class="service-icon">
+            <i class="bi ${service.icon} fs-4"></i>
+          </div>
+          <div>
+            <div>${highlightText(service.name, query)}</div>
+            <small class="text-muted">${highlightText(
+              service.description,
+              query
+            )}</small>
+          </div>
+        </div>
+      </div>
+    `
+      )
+      .join("")}
+  `;
+      }
+
+      function highlightText(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query})`, "gi");
+        return text.replace(regex, "<mark>$1</mark>");
+      }
+
+      function clearSuggestions() {
+        productSuggestions.innerHTML = "";
+        serviceSuggestions.innerHTML = "";
+      }
+    </script>
+  </body>
+</html>

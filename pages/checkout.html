@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
+    />
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+      .navbar {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .address-type-card {
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .address-type-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .section-card {
+        background: white;
+        padding: 1rem;
+        margin-bottom: 8px;
+      }
+
+      .delivery-address {
+        border-left: 4px solid var(--primary-color);
+        padding-left: 1rem;
+        height: 10rem;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Add to style section */
+      .address-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .address-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+      }
+
+      .address-badge {
+        padding: 0.25rem 0.75rem;
+        background: #e0e6ff;
+        color: #002df5;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .address-content {
+        height: 100%;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+      }
+
+      .address-detail {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
+
+      #addNewAddressBtn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+      }
+
+      .product-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      .product-details {
+        flex: 1;
+      }
+
+      .product-name {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+      }
+
+      .product-variant {
+        font-size: 0.8rem;
+        color: #757575;
+      }
+
+      .product-price {
+        color: var(--primary-color);
+        font-weight: 600;
+      }
+
+      .payment-method {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .payment-icon {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+      }
+
+      .bottom-bar2 {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 0.5rem;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-height: 80px;
+        border-top: 0.5px solid;
+        border-color: #2f00ff !important;
+      }
+
+      .total-amount {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+
+      .place-order-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .loading-overlay.active {
+        display: flex;
+      }
+
+      .page-content {
+        transition: opacity 0.3s;
+      }
+
+      .page-content.loading {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="page-content">
+      <!-- Navbar -->
+      <nav class="navbar fixed-top">
+        <div class="container-fluid">
+          <div class="d-flex align-items-center gap-3">
+            <a
+              href="#"
+              class="text-dark"
+              onclick="window.history.back(); return false;"
+            >
+              <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <h6 class="mb-0">Checkout</h6>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <div
+        class="main-content"
+        style="margin-top: 56px; margin-bottom: 80px; padding: 1rem"
+      >
+        <!-- Delivery Address -->
+        <div class="section-card">
+          <div class="row g-3" id="addressSection">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="section-card">
+          <div id="orderItems">
+            <!-- Order items will be loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="section-card">
+          <h6 class="mb-3">Payment Method</h6>
+          <div class="payment-methods">
+            <label class="payment-method w-100">
+              <input type="radio" name="payment" value="cod" checked />
+              <span class="ms-2">Cash on Delivery</span>
+            </label>
+            <label class="payment-method w-100">
+              <input type="radio" name="payment" value="bank" />
+              <span class="ms-2">Bank Transfer</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="section-card">
+          <h6 class="mb-3">Order Summary</h6>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Subtotal</span>
+            <span id="subtotal">Rp 0</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Shipping Fee</span>
+            <span id="shippingFee">Rp 0</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <strong>Total</strong>
+            <strong class="total-amount" id="total">Rp 0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="bottom-bar2">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted">Total Payment</div>
+            <div class="total-amount" id="bottomTotal">Rp 0</div>
+          </div>
+          <button class="place-order-btn" id="placeOrderBtn">
+            Place Order
+          </button>
+        </div>
+      </div>
+
+      <div class="modal fade" id="addressRequiredModal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-body text-center py-4">
+              <i class="bi bi-exclamation-circle text-warning fs-1 mb-3"></i>
+              <h5>Anda belum menambahkan alamat</h5>
+              <p>TAMBAHKAN ALAMAT TERLEBIH DAHULU</p>
+              <button class="btn btn-primary" id="addAddressBtn">
+                Tambahkan Alamat
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Type Selection Modal -->
+      <div class="modal fade" id="addressTypeModal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Pilih Jenis Alamat</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-6">
+                  <div
+                    class="card h-100 address-type-card"
+                    role="button"
+                    id="homeAddressBtn"
+                  >
+                    <div class="card-body text-center">
+                      <i class="bi bi-house fs-1 mb-2"></i>
+                      <h6>Alamat Rumah</h6>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div
+                    class="card h-100 address-type-card"
+                    role="button"
+                    id="classAddressBtn"
+                  >
+                    <div class="card-body text-center">
+                      <i class="bi bi-building fs-1 mb-2"></i>
+                      <h6>Alamat Kelas</h6>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Address Form Modal -->
+      <div class="modal fade" id="homeAddressFormModal">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Alamat Rumah</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <form id="homeAddressForm">
+                <!-- Contact Info -->
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Nama</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="homeName"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Nomor Telepon</label>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="homePhone"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- Location Picker -->
+                <div class="mb-3">
+                  <label class="form-label">Pilih Lokasi</label>
+                  <div class="d-flex gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      id="useCurrentLocation"
+                    >
+                      <i class="bi bi-crosshair"></i> Gunakan Lokasi Saat Ini
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Address Details -->
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Provinsi</label>
+                    <select class="form-select" id="province" required>
+                      <option value="">Pilih Provinsi</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Kota/Kabupaten</label>
+                    <select class="form-select" id="city" required>
+                      <option value="">Pilih Kota/Kabupaten</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Kecamatan</label>
+                    <select class="form-select" id="district" required>
+                      <option value="">Pilih Kecamatan</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Desa/Kelurahan</label>
+                    <select class="form-select" id="village" required>
+                      <option value="">Pilih Desa/Kelurahan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Kode Pos</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="postalCode"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Detail Alamat</label>
+                  <textarea
+                    class="form-control"
+                    id="addressDetail"
+                    rows="2"
+                    required
+                    placeholder="Nama jalan, nomor rumah"
+                  ></textarea>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Patokan</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="addressLandmark"
+                    placeholder="Contoh: Rumah hijau dekat Warung Jombang"
+                  />
+                </div>
+
+                <!-- Map Preview -->
+                <div class="mb-3">
+                  <div
+                    id="mapPreview"
+                    style="height: 200px; border-radius: 8px"
+                  ></div>
+                  <input type="hidden" id="latitude" />
+                  <input type="hidden" id="longitude" />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                  Konfirmasi
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class Address Form Modal -->
+      <div class="modal fade" id="classAddressFormModal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Alamat Kelas</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <form id="classAddressForm">
+                <div class="mb-3">
+                  <label class="form-label">Nama</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="className"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Sekolah</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="schoolName"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Kelas</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="classRoom"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Nomor Telepon</label>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="classPhone"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                  Konfirmasi
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add this modal after other modals -->
+      <div class="modal fade" id="addressListModal">
+        <div class="modal-dialog modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Manage Addresses</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div id="addressList"></div>
+              <button class="btn btn w-100 mt-3" id="addNewAddressBtn">
+                + Add New Address
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="loading-overlay">
+      <!-- Loading spinner... -->
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+      import { sendOrderNotification } from "../assets/js/callMeBot.js";
+      import { supabase, cartManager } from "../assets/js/supabase.js";
+
+      let orderItems = [];
+      let map = null;
+      let marker = null;
+      let geocoder = null;
+
+      function initMaps() {
+        try {
+          if (!map) {
+            map = L.map("mapPreview").setView([-6.2088, 106.8456], 15);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              attribution: "© OpenStreetMap contributors",
+            }).addTo(map);
+
+            marker = L.marker([-6.2088, 106.8456], {
+              draggable: true,
+            }).addTo(map);
+
+            geocoder = L.Control.geocoder({
+              defaultMarkGeocode: false,
+            })
+              .on("markgeocode", function (e) {
+                const latlng = e.geocode.center;
+                marker.setLatLng(latlng);
+                map.setView(latlng, 16);
+                updateAddressFromLatLng(latlng);
+              })
+              .addTo(map);
+
+            marker.on("dragend", function (e) {
+              updateAddressFromLatLng(e.target.getLatLng());
+            });
+          }
+        } catch (error) {
+          console.error("Error initializing map:", error);
+        }
+      }
+
+      let geocodeTimer;
+
+      async function updateMapFromAddress() {
+        try {
+          // Clear previous timer
+          if (geocodeTimer) clearTimeout(geocodeTimer);
+
+          // Set new timer with 1 second delay
+          geocodeTimer = setTimeout(async () => {
+            const province =
+              document.getElementById("province").options[
+                document.getElementById("province").selectedIndex
+              ]?.text || "";
+            const city =
+              document.getElementById("city").options[
+                document.getElementById("city").selectedIndex
+              ]?.text || "";
+            const district =
+              document.getElementById("district").options[
+                document.getElementById("district").selectedIndex
+              ]?.text || "";
+            const village =
+              document.getElementById("village").options[
+                document.getElementById("village").selectedIndex
+              ]?.text || "";
+            const postalCode = document.getElementById("postalCode").value;
+
+            if (!province || !city) return;
+
+            const address = `${village} ${district} ${city} ${province} ${postalCode} Indonesia`;
+            const encodedAddress = encodeURIComponent(address);
+
+            try {
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
+                {
+                  headers: {
+                    "User-Agent": "MyStore/1.0", // Add user agent as required by Nominatim
+                  },
+                }
+              );
+
+              if (!response.ok) throw new Error("Network response was not ok");
+
+              const data = await response.json();
+
+              if (data && data.length > 0) {
+                const { lat, lon } = data[0];
+                map.setView([lat, lon], 16);
+                marker.setLatLng([lat, lon]);
+
+                document.getElementById("latitude").value = lat;
+                document.getElementById("longitude").value = lon;
+              } else {
+                // Fallback to city center if specific location not found
+                const cityResponse = await fetch(
+                  `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                    city + ", " + province + ", Indonesia"
+                  )}&limit=1`,
+                  {
+                    headers: {
+                      "User-Agent": "MyStore/1.0",
+                    },
+                  }
+                );
+                const cityData = await cityResponse.json();
+
+                if (cityData && cityData.length > 0) {
+                  const { lat, lon } = cityData[0];
+                  map.setView([lat, lon], 13); // Zoom out a bit for city view
+                  marker.setLatLng([lat, lon]);
+
+                  document.getElementById("latitude").value = lat;
+                  document.getElementById("longitude").value = lon;
+                }
+              }
+            } catch (error) {
+              console.error("Geocoding error:", error);
+              // Keep the current map view if geocoding fails
+            }
+          }, 1000); // 1 second delay
+        } catch (error) {
+          console.error("Error in updateMapFromAddress:", error);
+        }
+      }
+
+      async function loadProvinces() {
+        try {
+          const response = await fetch(
+            "https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json"
+          );
+          const provinces = await response.json();
+
+          const select = document.getElementById("province");
+          select.innerHTML = '<option value="">Pilih Provinsi</option>';
+
+          provinces.sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
+          provinces.forEach((province) => {
+            select.innerHTML += `<option value="${province.id}">${province.name}</option>`;
+          });
+        } catch (error) {
+          console.error("Error loading provinces:", error);
+        }
+      }
+
+      async function loadCities(provinceId) {
+        try {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provinceId}.json`
+          );
+          const cities = await response.json();
+
+          const select = document.getElementById("city");
+          select.innerHTML = '<option value="">Pilih Kota/Kabupaten</option>';
+
+          cities.sort((a, b) => a.name.localeCompare(b.name));
+
+          cities.forEach((city) => {
+            select.innerHTML += `<option value="${city.id}">${city.name}</option>`;
+          });
+
+          select.disabled = false;
+        } catch (error) {
+          console.error("Error loading cities:", error);
+        }
+      }
+
+      async function loadDistricts(cityId) {
+        try {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/districts/${cityId}.json`
+          );
+          const districts = await response.json();
+
+          const select = document.getElementById("district");
+          select.innerHTML = '<option value="">Pilih Kecamatan</option>';
+
+          districts.sort((a, b) => a.name.localeCompare(b.name));
+
+          districts.forEach((district) => {
+            select.innerHTML += `<option value="${district.id}">${district.name}</option>`;
+          });
+
+          select.disabled = false;
+        } catch (error) {
+          console.error("Error loading districts:", error);
+        }
+      }
+
+      async function loadVillages(districtId) {
+        try {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`
+          );
+          const villages = await response.json();
+
+          const select = document.getElementById("village");
+          select.innerHTML = '<option value="">Pilih Desa/Kelurahan</option>';
+
+          villages.sort((a, b) => a.name.localeCompare(b.name));
+
+          villages.forEach((village) => {
+            select.innerHTML += `<option value="${village.id}">${village.name}</option>`;
+          });
+
+          select.disabled = false;
+        } catch (error) {
+          console.error("Error loading villages:", error);
+        }
+      }
+
+      // Add these event listeners
+      document
+        .getElementById("province")
+        .addEventListener("change", async (e) => {
+          const citySelect = document.getElementById("city");
+          const districtSelect = document.getElementById("district");
+          const villageSelect = document.getElementById("village");
+
+          citySelect.innerHTML =
+            '<option value="">Pilih Kota/Kabupaten</option>';
+          districtSelect.innerHTML =
+            '<option value="">Pilih Kecamatan</option>';
+          villageSelect.innerHTML =
+            '<option value="">Pilih Desa/Kelurahan</option>';
+
+          citySelect.disabled = true;
+          districtSelect.disabled = true;
+          villageSelect.disabled = true;
+
+          if (e.target.value) {
+            await loadCities(e.target.value);
+            await updateMapFromAddress();
+          }
+        });
+
+      document.getElementById("city").addEventListener("change", async (e) => {
+        const districtSelect = document.getElementById("district");
+        const villageSelect = document.getElementById("village");
+
+        districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
+        villageSelect.innerHTML =
+          '<option value="">Pilih Desa/Kelurahan</option>';
+
+        districtSelect.disabled = true;
+        villageSelect.disabled = true;
+
+        if (e.target.value) {
+          await loadDistricts(e.target.value);
+          await updateMapFromAddress();
+        }
+      });
+
+      document
+        .getElementById("district")
+        .addEventListener("change", async (e) => {
+          const villageSelect = document.getElementById("village");
+          villageSelect.innerHTML =
+            '<option value="">Pilih Desa/Kelurahan</option>';
+          villageSelect.disabled = true;
+
+          if (e.target.value) {
+            await loadVillages(e.target.value);
+            await updateMapFromAddress();
+          }
+        });
+
+      document
+        .getElementById("village")
+        .addEventListener("change", async (e) => {
+          if (e.target.value) {
+            await updateMapFromAddress();
+          }
+        });
+
+      document
+        .getElementById("postalCode")
+        .addEventListener("change", async (e) => {
+          if (e.target.value) {
+            await updateMapFromAddress();
+          }
+        });
+
+      // Get current location
+      async function getCurrentLocation() {
+        try {
+          if (!map || !marker) {
+            await initMaps();
+          }
+
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                const latlng = {
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                };
+
+                map.setView([latlng.lat, latlng.lng], 16);
+                marker.setLatLng([latlng.lat, latlng.lng]);
+                await updateAddressFromLatLng(latlng);
+              },
+              (error) => {
+                console.error("Error getting location:", error);
+                alert("Tidak dapat mendapatkan lokasi Anda.");
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Error in getCurrentLocation:", error);
+          alert("Terjadi kesalahan saat mengambil lokasi.");
+        }
+      }
+
+      // Update address fields from geocoding result
+      async function updateAddressFromLatLng(latlng) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latlng.lat}&lon=${latlng.lng}&format=json`
+          );
+          const data = await response.json();
+
+          document.getElementById("latitude").value = latlng.lat;
+          document.getElementById("longitude").value = latlng.lng;
+
+          // Update address fields
+          if (data.address) {
+            document.getElementById("province").value =
+              data.address.state || "";
+            document.getElementById("city").value =
+              data.address.city || data.address.town || "";
+            document.getElementById("district").value =
+              data.address.suburb || "";
+            document.getElementById("village").value =
+              data.address.neighbourhood || "";
+            document.getElementById("postalCode").value =
+              data.address.postcode || "";
+            document.getElementById("addressDetail").value =
+              data.display_name || "";
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+      }
+
+      // Event Listeners
+      document
+        .getElementById("useCurrentLocation")
+        .addEventListener("click", getCurrentLocation);
+
+      async function loadOrderItems() {
+        try {
+          const selectedItems = JSON.parse(
+            localStorage.getItem("checkoutItems")
+          );
+          if (!selectedItems || selectedItems.length === 0) {
+            window.location.href = "cart.html";
+            return;
+          }
+
+          const productIds = [
+            ...new Set(selectedItems.map((item) => parseInt(item.id))),
+          ];
+          const { data: products, error } = await supabase
+            .from("products")
+            .select("*, product_variants(*)")
+            .in("id", productIds);
+
+          if (error) throw error;
+
+          orderItems = selectedItems.map((item) => {
+            const product = products.find((p) => p.id === parseInt(item.id));
+            const variant = product.product_variants.find(
+              (v) => v.id === parseInt(item.variantId)
+            );
+
+            return {
+              ...item,
+              productName: product.name,
+              thumbnail: product.thumbnail,
+              variantName: variant.variant_name,
+              price: variant.price,
+            };
+          });
+
+          renderOrderItems();
+          updateSummary();
+        } catch (error) {
+          console.error("Error loading order items:", error);
+        }
+      }
+
+      document
+        .getElementById("homeAddressForm")
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          const editId = e.target.dataset.editId;
+
+          // Get selected options text
+          const provinceSelect = document.getElementById("province");
+          const citySelect = document.getElementById("city");
+          const districtSelect = document.getElementById("district");
+          const villageSelect = document.getElementById("village");
+
+          const addressData = {
+            type: "home",
+            name: document.getElementById("homeName").value,
+            phone: document.getElementById("homePhone").value,
+            province: {
+              id: provinceSelect.value,
+              name:
+                provinceSelect.options[provinceSelect.selectedIndex]?.text ||
+                "",
+            },
+            city: {
+              id: citySelect.value,
+              name: citySelect.options[citySelect.selectedIndex]?.text || "",
+            },
+            district: {
+              id: districtSelect.value,
+              name:
+                districtSelect.options[districtSelect.selectedIndex]?.text ||
+                "",
+            },
+            village: {
+              id: villageSelect.value,
+              name:
+                villageSelect.options[villageSelect.selectedIndex]?.text || "",
+            },
+            postalCode: document.getElementById("postalCode").value,
+            addressDetail: document.getElementById("addressDetail").value,
+            landmark: document.getElementById("addressLandmark").value,
+            latitude: document.getElementById("latitude").value,
+            longitude: document.getElementById("longitude").value,
+          };
+
+          if (editId) {
+            cartManager.updateAddress(editId, addressData);
+            delete e.target.dataset.editId;
+          } else {
+            cartManager.addAddress(addressData);
+          }
+
+          bootstrap.Modal.getInstance(
+            document.getElementById("homeAddressFormModal")
+          ).hide();
+          renderAddress();
+        });
+
+      function renderAddress() {
+        const address = cartManager.getSelectedAddress();
+        const addressSection = document.getElementById("addressSection");
+
+        if (!address) {
+          const modal = new bootstrap.Modal(
+            document.getElementById("addressRequiredModal")
+          );
+          modal.show();
+          return;
+        }
+
+        addressSection.innerHTML = `
+    <div class="address-card">
+      <div class="d-flex align-items-start gap-3">
+        <div class="address-icon">
+          <i class="bi bi-${
+            address.type === "home" ? "house" : "building"
+          } fs-4"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h6 class="mb-1">${address.name}</h6>
+              <span class="address-badge">${
+                address.type === "home" ? "Alamat Rumah" : "Alamat Kelas"
+              }</span>
+            </div>
+            <button class="btn btn-link p-0" id="changeAddressBtn">Ubah</button>
+          </div>
+          <div class="text-muted mt-2">
+            ${
+              address.type === "home"
+                ? `${address.province.name}, ${address.city.name}<br>
+                 ${address.district.name}, ${address.village.name}<br>
+                 ${address.postalCode}
+                 ${address.landmark ? `<br>Patokan: ${address.landmark}` : ""}`
+                : `${address.school} - Kelas ${address.classRoom}`
+            }
+          </div>
+          <div class="mt-2">
+            <i class="bi bi-telephone me-1"></i> ${address.phone}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+        document
+          .getElementById("changeAddressBtn")
+          .addEventListener("click", showAddressList);
+      }
+
+      function showAddressList() {
+        const addresses = cartManager.getAddresses();
+        const container = document.getElementById("addressList");
+        container.innerHTML = addresses
+          .map(
+            (addr) => `
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h6 class="mb-1">${
+              addr.type === "home" ? addr.name : addr.school
+            }</h6>
+            <div class="text-muted small">
+              ${
+                addr.type === "home"
+                  ? addr.addressDetail
+                  : `${addr.school} - Kelas ${addr.classRoom}`
+              }
+            </div>
+            <div class="text-muted small">${addr.phone}</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-danger delete-address" data-id="${
+              addr.id
+            }">
+              <i class="bi bi-trash"></i>
+            </button>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary edit-address" data-id="${
+                addr.id
+              }">Edit</button>
+              <button class="btn btn-sm btn-outline-primary select-address" data-id="${
+                addr.id
+              }">Select</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+          )
+          .join("");
+
+        // Add event listeners
+        container.querySelectorAll(".delete-address").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (confirm("Are you sure you want to delete this address?")) {
+              cartManager.deleteAddress(btn.dataset.id);
+              showAddressList(); // Refresh the list
+              renderAddress(); // Update the main address display
+            }
+          });
+        });
+
+        // Add event listeners
+        container.querySelectorAll(".edit-address").forEach((btn) => {
+          btn.addEventListener("click", () => editAddress(btn.dataset.id));
+        });
+
+        container.querySelectorAll(".select-address").forEach((btn) => {
+          btn.addEventListener("click", () => selectAddress(btn.dataset.id));
+        });
+
+        new bootstrap.Modal(document.getElementById("addressListModal")).show();
+      }
+
+      function editAddress(id) {
+        const addresses = cartManager.getAddresses();
+        const address = addresses.find((addr) => addr.id === id);
+
+        if (address.type === "home") {
+          // Set form values
+          document.getElementById("homeName").value = address.name || "";
+          document.getElementById("homePhone").value = address.phone || "";
+          document.getElementById("province").value = address.province || "";
+          document.getElementById("city").value = address.city || "";
+          document.getElementById("district").value = address.district || "";
+          document.getElementById("village").value = address.village || "";
+          document.getElementById("postalCode").value =
+            address.postalCode || "";
+          document.getElementById("addressDetail").value =
+            address.addressDetail || "";
+          document.getElementById("addressLandmark").value =
+            address.landmark || "";
+          document.getElementById("latitude").value = address.latitude || "";
+          document.getElementById("longitude").value = address.longitude || "";
+
+          // Set form edit ID
+          document.getElementById("homeAddressForm").dataset.editId = id;
+
+          // Close address list modal and show edit form
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressListModal")
+          ).hide();
+          const modal = new bootstrap.Modal(
+            document.getElementById("homeAddressFormModal")
+          );
+
+          // Initialize map and load provinces after modal is shown
+          modal._element.addEventListener(
+            "shown.bs.modal",
+            async () => {
+              await initMaps();
+              await loadProvinces();
+
+              // If we have coordinates, update map
+              if (address.latitude && address.longitude) {
+                map.setView([address.latitude, address.longitude], 16);
+                marker.setLatLng([address.latitude, address.longitude]);
+              }
+            },
+            { once: true }
+          );
+
+          modal.show();
+        } else {
+          // Class address
+          document.getElementById("className").value = address.name || "";
+          document.getElementById("schoolName").value = address.school || "";
+          document.getElementById("classRoom").value = address.classRoom || "";
+          document.getElementById("classPhone").value = address.phone || "";
+
+          document.getElementById("classAddressForm").dataset.editId = id;
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressListModal")
+          ).hide();
+          new bootstrap.Modal(
+            document.getElementById("classAddressFormModal")
+          ).show();
+        }
+      }
+
+      function selectAddress(id) {
+        const addresses = cartManager.getAddresses();
+        const address = addresses.find((addr) => addr.id === id);
+        cartManager.setSelectedAddress(address);
+        bootstrap.Modal.getInstance(
+          document.getElementById("addressListModal")
+        ).hide();
+        renderAddress();
+      }
+
+      // Modal handlers
+      document.getElementById("addAddressBtn").addEventListener("click", () => {
+        bootstrap.Modal.getInstance(
+          document.getElementById("addressRequiredModal")
+        ).hide();
+        new bootstrap.Modal(document.getElementById("addressTypeModal")).show();
+      });
+
+      document
+        .getElementById("homeAddressBtn")
+        .addEventListener("click", () => {
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressTypeModal")
+          ).hide();
+          const modal = new bootstrap.Modal(
+            document.getElementById("homeAddressFormModal")
+          );
+          modal.show();
+
+          // Initialize map and load provinces after modal is shown
+          modal._element.addEventListener(
+            "shown.bs.modal",
+            () => {
+              initMaps();
+              loadProvinces();
+            },
+            { once: true }
+          );
+        });
+
+      document
+        .getElementById("classAddressBtn")
+        .addEventListener("click", () => {
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressTypeModal")
+          ).hide();
+          new bootstrap.Modal(
+            document.getElementById("classAddressFormModal")
+          ).show();
+        });
+
+      document
+        .getElementById("classAddressForm")
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          const editId = e.target.dataset.editId;
+          const addressData = {
+            type: "class",
+            name: document.getElementById("className").value,
+            school: document.getElementById("schoolName").value,
+            classRoom: document.getElementById("classRoom").value,
+            phone: document.getElementById("classPhone").value,
+          };
+
+          if (editId) {
+            cartManager.updateAddress(editId, addressData);
+            delete e.target.dataset.editId;
+          } else {
+            cartManager.addAddress(addressData);
+          }
+
+          bootstrap.Modal.getInstance(
+            document.getElementById("classAddressFormModal")
+          ).hide();
+          renderAddress();
+        });
+
+      document
+        .getElementById("addNewAddressBtn")
+        .addEventListener("click", () => {
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressListModal")
+          ).hide();
+          new bootstrap.Modal(
+            document.getElementById("addressTypeModal")
+          ).show();
+        });
+
+      // Initialize address section
+      document.addEventListener("DOMContentLoaded", () => {
+        loadOrderItems();
+        renderAddress();
+      });
+
+      function renderOrderItems() {
+        const container = document.getElementById("orderItems");
+        container.innerHTML = orderItems
+          .map(
+            (item) => `
+                <div class="product-item">
+                    <img src="${item.thumbnail}" class="product-image" alt="${
+              item.productName
+            }">
+                    <div class="product-details">
+                        <div class="product-name">${item.productName}</div>
+                        <div class="product-variant">Variant: ${
+                          item.variantName
+                        }</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="product-price">Rp ${item.price.toLocaleString()}</div>
+                            <div class="text-muted">Qty: ${item.quantity}</div>
+                        </div>
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      function updateSummary() {
+        const subtotal = orderItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+        const shippingFee = subtotal > 0 ? 10000 : 0;
+        const total = subtotal + shippingFee;
+
+        document.getElementById(
+          "subtotal"
+        ).textContent = `Rp ${subtotal.toLocaleString()}`;
+        document.getElementById(
+          "shippingFee"
+        ).textContent = `Rp ${shippingFee.toLocaleString()}`;
+        document.getElementById(
+          "total"
+        ).textContent = `Rp ${total.toLocaleString()}`;
+        document.getElementById(
+          "bottomTotal"
+        ).textContent = `Rp ${total.toLocaleString()}`;
+      }
+
+      document
+        .getElementById("placeOrderBtn")
+        .addEventListener("click", async () => {
+          const paymentMethod = document.querySelector(
+            'input[name="payment"]:checked'
+          ).value;
+          const checkoutItems = JSON.parse(
+            localStorage.getItem("checkoutItems")
+          );
+          const selectedAddress = cartManager.getSelectedAddress();
+
+          if (!checkoutItems || !checkoutItems.length) {
+            alert("No items to checkout");
+            return;
+          }
+
+          try {
+            // Show loading
+            document.querySelector(".loading-overlay").classList.add("active");
+            document.querySelector(".page-content").classList.add("loading");
+
+            // Get current cart
+            const cart = cartManager.getCart();
+
+            // Remove items that are being purchased
+            const updatedCart = cart.filter((cartItem) => {
+              return !checkoutItems.some(
+                (checkoutItem) =>
+                  parseInt(checkoutItem.id) === parseInt(cartItem.id) &&
+                  parseInt(checkoutItem.variantId) ===
+                    parseInt(cartItem.variantId)
+              );
+            });
+
+            // Calculate total
+            const subtotal = orderItems.reduce(
+              (sum, item) => sum + item.price * item.quantity,
+              0
+            );
+            const shippingFee = subtotal > 0 ? 10000 : 0;
+            const total = subtotal + shippingFee;
+
+            // Create order summary
+            const orderSummary = {
+              items: orderItems,
+              subtotal,
+              shippingFee,
+              total,
+              paymentMethod,
+              address: selectedAddress,
+            };
+
+            // Send WhatsApp notification
+            await sendOrderNotification("product", {
+              orderSummary,
+              selectedAddress,
+            });
+
+            // Store order summary
+            localStorage.setItem("orderSummary", JSON.stringify(orderSummary));
+
+            // Update cart
+            localStorage.setItem("cart", JSON.stringify(updatedCart));
+            localStorage.removeItem("checkoutItems");
+
+            // Simulate processing delay
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            // Redirect to finish page
+            window.location.href = `finish.html?orderId=${Date.now().toString()}&payment=${paymentMethod}&total=${total}`;
+          } catch (error) {
+            console.error("Error processing order:", error);
+            alert(
+              "There was an error processing your order. Please try again."
+            );
+
+            // Hide loading on error
+            document
+              .querySelector(".loading-overlay")
+              .classList.remove("active");
+            document.querySelector(".page-content").classList.remove("loading");
+          }
+        });
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", loadOrderItems);
+    </script>
+  </body>
+</html>

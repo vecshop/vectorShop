@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Service - MyStore</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <!-- Tambahkan CSS kustom sesuai kebutuhan -->
+    <style>
+      :root {
+        --primary-color: #024783;
+      }
+      .btn-prim {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .choice-card {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid #dee2e6;
+      }
+
+      .choice-card:hover {
+        border-color: var(--primary-color);
+      }
+
+      .btn-check:checked + .choice-card {
+        border-color: var(--primary-color);
+        background-color: #e8f0fe;
+      }
+
+      .file-preview {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .file-preview .card {
+        transition: all 0.2s;
+      }
+
+      .file-preview .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Floating Bubble Style */
+      .range-wrapper {
+        position: relative;
+        padding-top: 24px;
+      }
+
+      .form-range {
+        height: 4px;
+        -webkit-appearance: none;
+      }
+
+      .form-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        cursor: pointer;
+        margin-top: -8px;
+        position: relative;
+        z-index: 2;
+      }
+
+      .form-range::-webkit-slider-runnable-track {
+        background: #e9ecef;
+        height: 4px;
+        border-radius: 2px;
+      }
+
+      .bubble {
+        position: absolute;
+        top: 0;
+        padding: 4px 12px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        transform: translateX(-50%);
+        transition: left 0.1s;
+      }
+
+      .bubble::after {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid var(--primary-color);
+      }
+
+      .slider-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+
+      .compact-address {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .compact-address-badge {
+        padding: 2px 8px;
+        background: #e0e6ff;
+        color: #002df5;
+        border-radius: 12px;
+        font-size: 0.75rem;
+      }
+
+      .compact-address-content {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar fixed-top bg-white">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center gap-3">
+          <a
+            href="#"
+            class="text-dark"
+            onclick="window.history.back(); return false;"
+          >
+            <i class="bi bi-arrow-left fs-5"></i>
+          </a>
+          <h6 class="mb-0">Order Form</h6>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-top: 80px; margin-bottom: 80px">
+      <!-- Address Section -->
+      <div class="compact-address" id="addressSection">
+        <!-- Will be populated dynamically -->
+      </div>
+
+      <div id="formContainer">
+        <!-- Form akan di-render di sini -->
+      </div>
+    </div>
+
+    <div class="modal fade" id="addressRequiredModal">
+      <!-- Copy address required modal content from checkout.html -->
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-body text-center py-4">
+            <i class="bi bi-exclamation-circle text-warning fs-1 mb-3"></i>
+            <h5>Anda belum menambahkan alamat</h5>
+            <p>TAMBAHKAN ALAMAT TERLEBIH DAHULU</p>
+            <button class="btn btn-prim" id="addAddressBtn">
+              Tambahkan Alamat
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="addressTypeModal">
+      <!-- Copy address type modal content from checkout.html -->
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Pilih Jenis Alamat</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <div
+                  class="card h-100 address-type-card"
+                  role="button"
+                  id="homeAddressBtn"
+                >
+                  <div class="card-body text-center">
+                    <i class="bi bi-house fs-1 mb-2"></i>
+                    <h6>Alamat Rumah</h6>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div
+                  class="card h-100 address-type-card"
+                  role="button"
+                  id="classAddressBtn"
+                >
+                  <div class="card-body text-center">
+                    <i class="bi bi-building fs-1 mb-2"></i>
+                    <h6>Alamat Kelas</h6>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="addressListModal">
+      <!-- Copy address list modal content from checkout.html -->
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Manage Addresses</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="addressList"></div>
+            <button class="btn btn-prim w-100 mt-3" id="addNewAddressBtn">
+              + Add New Address
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="homeAddressFormModal">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Alamat Rumah</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="homeAddressForm">
+              <!-- Contact Info -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nama</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="homeName"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Nomor Telepon</label>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="homePhone"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Location Picker -->
+              <div class="mb-3">
+                <label class="form-label">Pilih Lokasi</label>
+                <div class="d-flex gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    id="useCurrentLocation"
+                  >
+                    <i class="bi bi-crosshair"></i> Gunakan Lokasi Saat Ini
+                  </button>
+                </div>
+              </div>
+
+              <!-- Address Details -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Provinsi</label>
+                  <select class="form-select" id="province" required>
+                    <option value="">Pilih Provinsi</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Kota/Kabupaten</label>
+                  <select class="form-select" id="city" required>
+                    <option value="">Pilih Kota/Kabupaten</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Kecamatan</label>
+                  <select class="form-select" id="district" required>
+                    <option value="">Pilih Kecamatan</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Desa/Kelurahan</label>
+                  <select class="form-select" id="village" required>
+                    <option value="">Pilih Desa/Kelurahan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">Kode Pos</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="postalCode"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Detail Alamat</label>
+                <textarea
+                  class="form-control"
+                  id="addressDetail"
+                  rows="2"
+                  required
+                  placeholder="Nama jalan, nomor rumah"
+                ></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Patokan</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="addressLandmark"
+                  placeholder="Contoh: Rumah hijau dekat Warung Jombang"
+                />
+              </div>
+
+              <!-- Map Preview -->
+              <div class="mb-3">
+                <div
+                  id="mapPreview"
+                  style="height: 200px; border-radius: 8px"
+                ></div>
+                <input type="hidden" id="latitude" />
+                <input type="hidden" id="longitude" />
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100">
+                Konfirmasi
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="classAddressFormModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Alamat Kelas</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="classAddressForm">
+              <div class="mb-3">
+                <label class="form-label">Nama</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="className"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Sekolah</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="schoolName"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Kelas</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="classRoom"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Nomor Telepon</label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="classPhone"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-primary w-100">
+                Konfirmasi
+              </button>
+            </form> 
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script type="module">
+      import { supabase, cartManager } from "../assets/js/supabase.js";
+      import { sendOrderNotification } from "../assets/js/callMeBot.js";
+
+      let map = null;
+      let marker = null;
+      let geocoder = null;
+
+      function initMaps() {
+        try {
+          if (!map) {
+            map = L.map("mapPreview").setView([-6.2088, 106.8456], 15);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              attribution: "© OpenStreetMap contributors",
+            }).addTo(map);
+
+            marker = L.marker([-6.2088, 106.8456], {
+              draggable: true,
+            }).addTo(map);
+
+            geocoder = L.Control.geocoder({
+              defaultMarkGeocode: false,
+            })
+              .on("markgeocode", function (e) {
+                const latlng = e.geocode.center;
+                marker.setLatLng(latlng);
+                map.setView(latlng, 16);
+                updateAddressFromLatLng(latlng);
+              })
+              .addTo(map);
+
+            marker.on("dragend", function (e) {
+              updateAddressFromLatLng(e.target.getLatLng());
+            });
+          }
+        } catch (error) {
+          console.error("Error initializing map:", error);
+        }
+      }
+
+      async function updateAddressFromLatLng(latlng) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latlng.lat}&lon=${latlng.lng}&format=json&addressdetails=1`
+          );
+          const data = await response.json();
+
+          // Set coordinates
+          document.getElementById("latitude").value = latlng.lat;
+          document.getElementById("longitude").value = latlng.lng;
+
+          if (data.address) {
+            // Load provinces first
+            await loadProvinces();
+
+            // Find and select province
+            const provinceSelect = document.getElementById("province");
+            const provinceOption = Array.from(provinceSelect.options).find(
+              (opt) =>
+                opt.text
+                  .toLowerCase()
+                  .includes(data.address.state?.toLowerCase() || "")
+            );
+
+            if (provinceOption) {
+              provinceSelect.value = provinceOption.value;
+
+              // Load cities
+              await loadCities(provinceOption.value);
+
+              // Find and select city
+              const citySelect = document.getElementById("city");
+              const cityName = data.address.city || data.address.town;
+              const cityOption = Array.from(citySelect.options).find((opt) =>
+                opt.text.toLowerCase().includes(cityName?.toLowerCase() || "")
+              );
+
+              if (cityOption) {
+                citySelect.value = cityOption.value;
+                citySelect.disabled = false;
+
+                // Load districts
+                await loadDistricts(cityOption.value);
+
+                // Find and select district
+                const districtSelect = document.getElementById("district");
+                const districtOption = Array.from(districtSelect.options).find(
+                  (opt) =>
+                    opt.text
+                      .toLowerCase()
+                      .includes(data.address.suburb?.toLowerCase() || "")
+                );
+
+                if (districtOption) {
+                  districtSelect.value = districtOption.value;
+                  districtSelect.disabled = false;
+
+                  // Load villages
+                  await loadVillages(districtOption.value);
+
+                  // Find and select village
+                  const villageSelect = document.getElementById("village");
+                  const villageOption = Array.from(villageSelect.options).find(
+                    (opt) =>
+                      opt.text
+                        .toLowerCase()
+                        .includes(
+                          data.address.neighbourhood?.toLowerCase() || ""
+                        )
+                  );
+
+                  if (villageOption) {
+                    villageSelect.value = villageOption.value;
+                    villageSelect.disabled = false;
+                  }
+                }
+              }
+            }
+
+            // Set postal code if available
+            document.getElementById("postalCode").value =
+              data.address.postcode || "";
+
+            // Clear address detail and landmark
+            document.getElementById("addressDetail").value = "";
+            document.getElementById("addressLandmark").value = "";
+          }
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+      }
+
+      async function getCurrentLocation() {
+        try {
+          if (!map || !marker) {
+            await initMaps();
+          }
+
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                const latlng = {
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                };
+
+                map.setView([latlng.lat, latlng.lng], 16);
+                marker.setLatLng([latlng.lat, latlng.lng]);
+                await updateAddressFromLatLng(latlng);
+
+                // Show loading state
+                const btn = document.getElementById("useCurrentLocation");
+                const originalText = btn.innerHTML;
+                btn.innerHTML =
+                  '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+                btn.disabled = true;
+
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                  btn.innerHTML = originalText;
+                  btn.disabled = false;
+                }, 3000);
+              },
+              (error) => {
+                console.error("Error getting location:", error);
+                alert("Tidak dapat mendapatkan lokasi Anda.");
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Error in getCurrentLocation:", error);
+          alert("Terjadi kesalahan saat mengambil lokasi.");
+        }
+      }
+
+      function renderCompactAddress() {
+        const address = cartManager.getSelectedAddress();
+        const addressSection = document.getElementById("addressSection");
+
+        if (!address) {
+          const modal = new bootstrap.Modal(
+            document.getElementById("addressRequiredModal")
+          );
+          modal.show();
+          return;
+        }
+
+        addressSection.innerHTML = `
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-${
+                  address.type === "home" ? "house" : "building"
+                } text-primary"></i>
+                <strong class="me-2">${address.name}</strong>
+                <span class="compact-address-badge">${
+                  address.type === "home" ? "Rumah" : "Kelas"
+                }</span>
+              </div>
+              <div class="compact-address-content">
+                ${
+                  address.type === "home"
+                    ? `${address.province.name}, ${address.city.name}, ${address.district.name}`
+                    : `${address.school} - Kelas ${address.classRoom}`
+                }
+              </div>
+            </div>
+            <button class="btn btn-link btn-sm p-0" id="changeAddressBtn">Ubah</button>
+          </div>
+        `;
+
+        document
+          .getElementById("changeAddressBtn")
+          .addEventListener("click", showAddressList);
+      }
+
+      // Copy necessary address functions from checkout.html
+      function showAddressList() {
+        const addresses = cartManager.getAddresses();
+        const container = document.getElementById("addressList");
+        container.innerHTML = addresses
+          .map(
+            (addr) => `
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h6 class="mb-1">${
+              addr.type === "home" ? addr.name : addr.school
+            }</h6>
+            <div class="text-muted small">
+              ${
+                addr.type === "home"
+                  ? addr.addressDetail
+                  : `${addr.school} - Kelas ${addr.classRoom}`
+              }
+            </div>
+            <div class="text-muted small">${addr.phone}</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-danger delete-address" data-id="${
+              addr.id
+            }">
+              <i class="bi bi-trash"></i>
+            </button>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary edit-address" data-id="${
+                addr.id
+              }">Edit</button>
+              <button class="btn btn-sm btn-outline-primary select-address" data-id="${
+                addr.id
+              }">Select</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+          )
+          .join("");
+
+        // Add event listeners
+        container.querySelectorAll(".delete-address").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (confirm("Are you sure you want to delete this address?")) {
+              cartManager.deleteAddress(btn.dataset.id);
+              showAddressList(); // Refresh the list
+              renderAddress(); // Update the main address display
+            }
+          });
+        });
+
+        // Add event listeners
+        container.querySelectorAll(".edit-address").forEach((btn) => {
+          btn.addEventListener("click", () => editAddress(btn.dataset.id));
+        });
+
+        container.querySelectorAll(".select-address").forEach((btn) => {
+          btn.addEventListener("click", () => selectAddress(btn.dataset.id));
+        });
+
+        new bootstrap.Modal(document.getElementById("addressListModal")).show();
+      }
+
+      function editAddress(id) {
+        try {
+          const addresses = cartManager.getAddresses();
+          const address = addresses.find((addr) => addr.id === id);
+
+          if (address.type === "home") {
+            bootstrap.Modal.getInstance(
+              document.getElementById("addressListModal")
+            ).hide();
+
+            const modal = new bootstrap.Modal(
+              document.getElementById("homeAddressFormModal")
+            );
+            modal.show();
+
+            modal._element.addEventListener(
+              "shown.bs.modal",
+              async () => {
+                await initMaps();
+                await loadProvinces();
+
+                document.getElementById("homeName").value = address.name || "";
+                document.getElementById("homePhone").value =
+                  address.phone || "";
+                // Set other fields...
+
+                if (address.latitude && address.longitude) {
+                  map.setView([address.latitude, address.longitude], 16);
+                  marker.setLatLng([address.latitude, address.longitude]);
+                }
+
+                document.getElementById("homeAddressForm").dataset.editId = id;
+              },
+              { once: true }
+            );
+          } else {
+            bootstrap.Modal.getInstance(
+              document.getElementById("addressListModal")
+            ).hide();
+
+            // Show class address modal first, then set values
+            const modal = new bootstrap.Modal(
+              document.getElementById("classAddressFormModal")
+            );
+            modal.show();
+
+            modal._element.addEventListener(
+              "shown.bs.modal",
+              () => {
+                // Set form values after modal is shown
+                document.getElementById("className").value = address.name || "";
+                document.getElementById("schoolName").value =
+                  address.school || "";
+                document.getElementById("classRoom").value =
+                  address.classRoom || "";
+                document.getElementById("classPhone").value =
+                  address.phone || "";
+
+                document.getElementById("classAddressForm").dataset.editId = id;
+              },
+              { once: true }
+            );
+          }
+        } catch (error) {
+          console.error("Error in editAddress:", error);
+        }
+      }
+
+      function selectAddress(id) {
+        try {
+          const addresses = cartManager.getAddresses();
+          const address = addresses.find((addr) => addr.id === id);
+          cartManager.setSelectedAddress(address);
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressListModal")
+          ).hide();
+          renderCompactAddress(); // Changed from renderAddress to renderCompactAddress
+        } catch (error) {
+          console.error("Error in selectAddress:", error);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderCompactAddress();
+        initForm();
+      });
+
+      document
+        .getElementById("homeAddressForm")
+        ?.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const editId = e.target.dataset.editId;
+          // ... handle home address form submission ...
+          bootstrap.Modal.getInstance(
+            document.getElementById("homeAddressFormModal")
+          ).hide();
+          renderCompactAddress();
+        });
+
+      document
+        .getElementById("classAddressForm")
+        ?.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const editId = e.target.dataset.editId;
+          // ... handle class address form submission ...
+          bootstrap.Modal.getInstance(
+            document.getElementById("classAddressFormModal")
+          ).hide();
+          renderCompactAddress();
+        });
+
+      // Add modal trigger listeners
+      document
+        .getElementById("addAddressBtn")
+        ?.addEventListener("click", () => {
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressRequiredModal")
+          ).hide();
+          new bootstrap.Modal(
+            document.getElementById("addressTypeModal")
+          ).show();
+        });
+
+      document
+        .getElementById("homeAddressBtn")
+        ?.addEventListener("click", () => {
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressTypeModal")
+          ).hide();
+          const modal = new bootstrap.Modal(
+            document.getElementById("homeAddressFormModal")
+          );
+
+          // Initialize map and load provinces after modal is shown
+          modal._element.addEventListener(
+            "shown.bs.modal",
+            async () => {
+              await initMaps();
+              await loadProvinces();
+            },
+            { once: true }
+          );
+
+          modal.show();
+        });
+
+      // Add current location button handler
+      document
+        .getElementById("useCurrentLocation")
+        ?.addEventListener("click", getCurrentLocation);
+
+      document
+        .getElementById("classAddressBtn")
+        ?.addEventListener("click", () => {
+          bootstrap.Modal.getInstance(
+            document.getElementById("addressTypeModal")
+          ).hide();
+          new bootstrap.Modal(
+            document.getElementById("classAddressFormModal")
+          ).show();
+        });
+
+      import {
+        getServiceFormTemplate,
+        submitServiceForm,
+      } from "../assets/js/supabase.js";
+      import { FormRenderer } from "../assets/js/formRenderer.js";
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const serviceId = urlParams.get("id");
+      const level = urlParams.get("level");
+
+      async function initForm() {
+        try {
+          const template = await getServiceFormTemplate(serviceId);
+          const formRenderer = new FormRenderer(
+            document.getElementById("formContainer"),
+            template,
+            supabase // Pass supabase client
+          );
+          await formRenderer.render();
+        } catch (error) {
+          console.error("Error initializing form:", error);
+        }
+      }
+
+      async function loadProvinces() {
+        try {
+          const response = await fetch(
+            "https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json"
+          );
+          const provinces = await response.json();
+
+          const select = document.getElementById("province");
+          select.innerHTML = '<option value="">Pilih Provinsi</option>';
+
+          provinces.sort((a, b) => a.name.localeCompare(b.name));
+
+          provinces.forEach((province) => {
+            select.innerHTML += `<option value="${province.id}">${province.name}</option>`;
+          });
+        } catch (error) {
+          console.error("Error loading provinces:", error);
+        }
+      }
+
+      async function loadCities(provinceId) {
+        try {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provinceId}.json`
+          );
+          const cities = await response.json();
+
+          const select = document.getElementById("city");
+          select.innerHTML = '<option value="">Pilih Kota/Kabupaten</option>';
+
+          cities.sort((a, b) => a.name.localeCompare(b.name));
+
+          cities.forEach((city) => {
+            select.innerHTML += `<option value="${city.id}">${city.name}</option>`;
+          });
+
+          select.disabled = false;
+        } catch (error) {
+          console.error("Error loading cities:", error);
+        }
+      }
+
+      async function loadDistricts(cityId) {
+        try {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/districts/${cityId}.json`
+          );
+          const districts = await response.json();
+
+          const select = document.getElementById("district");
+          select.innerHTML = '<option value="">Pilih Kecamatan</option>';
+
+          districts.sort((a, b) => a.name.localeCompare(b.name));
+
+          districts.forEach((district) => {
+            select.innerHTML += `<option value="${district.id}">${district.name}</option>`;
+          });
+
+          select.disabled = false;
+        } catch (error) {
+          console.error("Error loading districts:", error);
+        }
+      }
+
+      async function loadVillages(districtId) {
+        try {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`
+          );
+          const villages = await response.json();
+
+          const select = document.getElementById("village");
+          select.innerHTML = '<option value="">Pilih Desa/Kelurahan</option>';
+
+          villages.sort((a, b) => a.name.localeCompare(b.name));
+
+          villages.forEach((village) => {
+            select.innerHTML += `<option value="${village.id}">${village.name}</option>`;
+          });
+
+          select.disabled = false;
+        } catch (error) {
+          console.error("Error loading villages:", error);
+        }
+      }
+
+      // Add region select event listeners
+      document
+        .getElementById("province")
+        ?.addEventListener("change", async (e) => {
+          const citySelect = document.getElementById("city");
+          const districtSelect = document.getElementById("district");
+          const villageSelect = document.getElementById("village");
+
+          citySelect.innerHTML =
+            '<option value="">Pilih Kota/Kabupaten</option>';
+          districtSelect.innerHTML =
+            '<option value="">Pilih Kecamatan</option>';
+          villageSelect.innerHTML =
+            '<option value="">Pilih Desa/Kelurahan</option>';
+
+          citySelect.disabled = true;
+          districtSelect.disabled = true;
+          villageSelect.disabled = true;
+
+          if (e.target.value) {
+            await loadCities(e.target.value);
+          }
+        });
+
+      document.getElementById("city")?.addEventListener("change", async (e) => {
+        const districtSelect = document.getElementById("district");
+        const villageSelect = document.getElementById("village");
+
+        districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
+        villageSelect.innerHTML =
+          '<option value="">Pilih Desa/Kelurahan</option>';
+
+        districtSelect.disabled = true;
+        villageSelect.disabled = true;
+
+        if (e.target.value) {
+          await loadDistricts(e.target.value);
+        }
+      });
+
+      document
+        .getElementById("district")
+        ?.addEventListener("change", async (e) => {
+          const villageSelect = document.getElementById("village");
+          villageSelect.innerHTML =
+            '<option value="">Pilih Desa/Kelurahan</option>';
+          villageSelect.disabled = true;
+
+          if (e.target.value) {
+            await loadVillages(e.target.value);
+          }
+        });
+
+      document.addEventListener("DOMContentLoaded", initForm);
+    </script>
+  </body>
+</html>

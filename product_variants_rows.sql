@@ -1,0 +1,1 @@
+INSERT INTO "public"."product_variants" ("id", "product_id", "variant_name", "price", "stock", "created_at") VALUES ('2', '2', 'Black', '64000.00', '1000', '2025-01-26 06:16:41.271765+00');
